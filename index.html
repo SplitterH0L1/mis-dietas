@@ -1,0 +1,1330 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1d6b4c">
+<meta name="description" content="Dietas y gastos de la tarjeta por periodos. App no oficial.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Mis dietas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: una sola columna de móvil (máx. 560px): cifra principal arriba, después dietas sin día, días del periodo, movimientos y ajustes. */
+:root {
+  --bg: #eef3f0;
+  --surface: #ffffff;
+  --surface-2: #e3ebe6;
+  --line: #cfdbd4;
+  --fg: #15201b;
+  --muted: #5b6b63;
+  --accent: #1d6b4c;
+  --accent-soft: #d5ebe0;
+  --on-accent: #ffffff;
+  --warn: #a5520b;
+  --warn-soft: #fbe8d6;
+  --danger: #b42318;
+  --danger-soft: #fbe0dd;
+  --media: #3b5b9a;
+  --media-soft: #dde6f6;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --font-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1412; --surface: #161f1b; --surface-2: #1e2a25; --line: #2c3a34;
+    --fg: #e4ede8; --muted: #9aaba3; --accent: #52c491; --accent-soft: #173a2c; --on-accent: #08130e;
+    --warn: #f0a35e; --warn-soft: #3a2614; --danger: #ff8a7f; --danger-soft: #3f1b18;
+    --media: #8fb0f0; --media-soft: #1c2a45;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1412; --surface: #161f1b; --surface-2: #1e2a25; --line: #2c3a34;
+  --fg: #e4ede8; --muted: #9aaba3; --accent: #52c491; --accent-soft: #173a2c; --on-accent: #08130e;
+  --warn: #f0a35e; --warn-soft: #3a2614; --danger: #ff8a7f; --danger-soft: #3f1b18;
+  --media: #8fb0f0; --media-soft: #1c2a45;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; }
+[hidden] { display: none !important; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px 40px;
+}
+main { max-width: 560px; margin: 0 auto; display: grid; gap: 18px; }
+h1, h2 { font-family: var(--font-display); margin: 0; text-wrap: balance; }
+h1 { font-size: 1.55rem; font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 1.05rem; font-weight: 600; }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.small { font-size: 0.82rem; }
+button, input, label.btn { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* Cabecera y periodo */
+header { display: grid; gap: 10px; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.save-state { font-size: 0.78rem; color: var(--muted); }
+.save-state.mal { color: var(--danger); font-weight: 600; }
+.instalar { padding: 6px 12px; font-size: 0.85rem; }
+.periodo { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px; }
+.periodo .rango { flex: 1; text-align: center; font-weight: 600; min-width: 0; }
+.periodo .rango small { display: block; font-weight: 400; color: var(--muted); font-size: 0.78rem; }
+.icon-btn { width: 40px; height: 40px; border-radius: 999px; border: 0; background: var(--surface-2); font-size: 1.2rem; line-height: 1; display: grid; place-items: center; }
+.hoy { border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 4px 10px; font-size: 0.8rem; }
+
+/* Cifra principal */
+.hero { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 18px 16px; display: grid; gap: 12px; }
+.hero .label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+.hero .big { font-family: var(--font-display); font-weight: 800; font-size: clamp(2.4rem, 11vw, 3.2rem); line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.hero.ok .big { color: var(--accent); }
+.hero.bad .big { color: var(--danger); }
+.estado { border-radius: 10px; padding: 9px 12px; font-size: 0.9rem; font-weight: 500; }
+.hero.ok .estado { background: var(--accent-soft); }
+.hero.bad .estado { background: var(--danger-soft); color: var(--danger); }
+.barra { height: 10px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+.barra > span { display: block; height: 100%; background: var(--accent); border-radius: 999px; transition: width .3s ease; }
+.hero.bad .barra > span { background: var(--danger); }
+.hero.warn .big { color: var(--warn); }
+.hero.warn .estado { background: var(--warn-soft); color: var(--warn); }
+.hero.warn .barra > span { background: var(--warn); }
+.ritmo { display: grid; gap: 4px; font-size: 0.88rem; color: var(--muted); }
+.ritmo b { color: var(--fg); font-family: var(--font-num); font-variant-numeric: tabular-nums; font-weight: 600; }
+a.btn { text-decoration: none; color: inherit; }
+a.btn.primary { color: var(--on-accent); }
+.pegar { display: grid; gap: 10px; background: var(--surface-2); border-radius: 12px; padding: 12px; }
+.pegar textarea { width: 100%; min-height: 8rem; resize: vertical; border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: var(--surface); color: var(--fg); font: 0.85rem/1.4 var(--font-num); }
+.desde { margin: 0; font-size: 0.88rem; }
+.cifras { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cifra { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+.cifra b { display: block; font-family: var(--font-num); font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+
+/* Secciones */
+section.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: grid; gap: 12px; }
+.sec-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+
+/* Dietas sin día */
+.sueltas { display: grid; gap: 10px; }
+.stepper-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.stepper { display: flex; align-items: center; gap: 6px; }
+.stepper output { min-width: 2.2em; text-align: center; font-family: var(--font-num); font-size: 1.15rem; font-weight: 600; }
+
+/* Días */
+.leyenda { display: flex; gap: 8px; flex-wrap: wrap; font-size: 0.8rem; color: var(--muted); }
+.dias { display: grid; }
+.dia { border-top: 1px solid var(--line); }
+.dia:first-child { border-top: 0; }
+.dia-row { display: grid; grid-template-columns: 4.2rem auto 1fr auto; align-items: center; gap: 10px; padding: 8px 0; }
+.dia-row .gasto { min-width: 0; }
+.fecha { line-height: 1.15; }
+.fecha b { font-family: var(--font-num); font-size: 1.05rem; }
+.fecha small { display: block; color: var(--muted); font-size: 0.75rem; text-transform: capitalize; }
+.dia.finde .fecha small { color: var(--warn); }
+.dia.hoy-d .fecha b { color: var(--accent); }
+.chip { border: 1px dashed var(--line); background: transparent; border-radius: 999px; padding: 6px 12px; font-size: 0.85rem; font-weight: 600; color: var(--muted); min-width: 6.6rem; }
+.chip.d { border: 1px solid transparent; background: var(--accent); color: var(--on-accent); }
+.chip.m { border: 1px solid transparent; background: var(--media-soft); color: var(--media); }
+.gasto { justify-self: end; border: 0; background: transparent; text-align: right; padding: 6px 2px; border-radius: 8px; }
+.gasto .num { font-size: 0.98rem; }
+.gasto.vacio { color: var(--muted); cursor: default; }
+.gasto.alto .num { color: var(--warn); font-weight: 600; }
+.gasto small { display: block; font-size: 0.7rem; color: var(--warn); }
+.flecha { color: var(--muted); font-size: 0.8rem; width: 1rem; text-align: center; }
+.detalle { list-style: none; margin: 0 0 10px; padding: 8px 12px; background: var(--surface-2); border-radius: 10px; display: grid; gap: 6px; }
+.detalle li { display: flex; justify-content: space-between; gap: 12px; font-size: 0.85rem; }
+.detalle li span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.detalle .hora { color: var(--muted); font-family: var(--font-num); margin-right: 6px; }
+.detalle .add { margin-top: 4px; padding: 8px 12px; font-size: 0.88rem; }
+.item-edit { all: unset; box-sizing: border-box; display: flex; justify-content: space-between; gap: 12px; width: 100%; cursor: pointer; border-radius: 6px; }
+.item-edit:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.item-edit .lapiz { color: var(--muted); font-size: 0.75rem; margin-left: 6px; }
+.tag { display: inline-block; font-size: 0.7rem; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: var(--media-soft); color: var(--media); margin-left: 6px; vertical-align: 1px; }
+.tag.efectivo { background: var(--warn-soft); color: var(--warn); }
+.gasto small.efectivo { color: var(--muted); }
+.tipos { display: grid; gap: 8px; }
+.tipo { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 4px 12px; padding: 10px 12px; background: var(--surface-2); border-radius: 10px; }
+.tipo b { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 1.05rem; }
+.tipo .small { grid-column: 1 / -1; }
+.tipo.total { background: transparent; border: 1px solid var(--line); }
+.tipo .punto { display: inline-block; width: 0.6rem; height: 0.6rem; border-radius: 999px; margin-right: 8px; vertical-align: 1px; }
+.editor { display: grid; gap: 10px; background: var(--surface-2); border-radius: 12px; padding: 12px; }
+.editor .titulo { font-weight: 600; }
+.editor .campo input { background: var(--surface); }
+.pago { border: 0; padding: 0; margin: 0; display: grid; gap: 6px; min-width: 0; }
+.pago legend { font-size: 0.85rem; color: var(--muted); padding: 0; margin-bottom: 4px; }
+.pago label { display: flex; gap: 10px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px; cursor: pointer; }
+.pago label:has(input:checked) { border-color: var(--accent); }
+.pago input { accent-color: var(--accent); width: 1.1rem; height: 1.1rem; margin: 0; }
+
+/* Botones */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 10px; padding: 10px 14px; font-weight: 600; border: 1px solid var(--line); background: var(--surface); cursor: pointer; text-align: center; }
+label.btn { font-weight: 600; }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+.btn.danger { color: var(--danger); border-color: var(--danger); background: transparent; }
+.btn.danger.solid { background: var(--danger); color: var(--surface); }
+.btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.btns .btn { flex: 1 1 10rem; }
+input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.aviso { border-radius: 10px; padding: 10px 12px; font-size: 0.88rem; background: var(--surface-2); }
+.aviso.ok { background: var(--accent-soft); }
+.aviso.error { background: var(--danger-soft); color: var(--danger); }
+.confirmar { display: grid; gap: 8px; background: var(--danger-soft); border-radius: 10px; padding: 10px 12px; }
+.mov-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: 8px; }
+.mov-info div { background: var(--surface-2); border-radius: 10px; padding: 8px 10px; min-width: 0; }
+.mov-info b { display: block; font-family: var(--font-num); }
+
+/* Ajustes */
+.campos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.campo { display: grid; gap: 4px; font-size: 0.85rem; color: var(--muted); }
+.campo input { border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: var(--bg); font-family: var(--font-num); font-size: 1rem; color: var(--fg); width: 100%; }
+.vacio-estado { text-align: center; padding: 6px 0; }
+@media (max-width: 380px) {
+  .dia-row { grid-template-columns: 3.6rem auto 1fr auto; gap: 6px; }
+  .chip { min-width: 5.6rem; padding: 6px 8px; }
+  .campos, .cifras { grid-template-columns: 1fr; }
+}
+/* Botón + de cada día y ayudas */
+.mas { width: 34px; height: 34px; border-radius: 999px; border: 0; background: var(--accent-soft); color: var(--accent); font-size: 1.25rem; font-weight: 700; line-height: 1; display: grid; place-items: center; padding: 0; }
+.tit { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.info-btn { width: 26px; height: 26px; flex: none; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--muted); font: italic 600 0.85rem/1 Georgia, "Times New Roman", serif; display: grid; place-items: center; padding: 0; }
+.info-btn[aria-expanded="true"] { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+.info { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; font-size: 0.88rem; line-height: 1.5; }
+.info p { margin: 0; }
+.info p + p { margin-top: 6px; }
+.hero .label-row { display: flex; align-items: center; gap: 8px; }
+.marca-tit { display: flex; align-items: center; gap: 10px; }
+.ayuda-btn { width: 34px; height: 34px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; padding: 0; display: grid; place-items: center; }
+.ayuda-btn[aria-expanded="true"] { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+.guia-txt { display: grid; gap: 12px; }
+.guia-txt h3 { font-family: var(--font-display); font-size: 0.98rem; font-weight: 600; margin: 0 0 2px; }
+.guia-txt p { margin: 0; font-size: 0.9rem; line-height: 1.5; }
+.guia-txt p + p { margin-top: 6px; }
+/* Primera configuración, casillas y pie */
+main[data-setup] > :not(header):not(#setup):not(footer) { display: none !important; }
+main[data-setup] header .periodo { display: none; }
+.check { display: flex; gap: 10px; align-items: flex-start; font-size: 0.9rem; cursor: pointer; }
+.check input { accent-color: var(--accent); width: 1.15rem; height: 1.15rem; margin: 2px 0 0; flex: none; }
+.pie { text-align: center; font-size: 0.78rem; color: var(--muted); padding-top: 4px; }
+@media (prefers-reduced-motion: reduce) { .barra > span { transition: none; } }
+</style>
+</head>
+<body>
+<main id="app">
+  <header>
+    <div class="top">
+      <div class="marca-tit"><h1>Mis dietas</h1><button class="ayuda-btn" data-action="ayuda" aria-expanded="false" aria-controls="guia" aria-label="Cómo funciona la app">?</button></div>
+      <span class="save-state" id="saveState">Cargando…</span>
+      <button class="btn primary instalar" id="btnInstalar" hidden>Instalar app</button>
+    </div>
+    <div class="periodo">
+      <button class="icon-btn" data-action="prev" aria-label="Periodo anterior">‹</button>
+      <div class="rango" id="rango"></div>
+      <button class="icon-btn" data-action="next" aria-label="Periodo siguiente">›</button>
+    </div>
+  </header>
+
+  <section class="card" id="setup" aria-labelledby="h-setup" hidden>
+    <h2 id="h-setup">Antes de empezar</h2>
+    <p class="small muted" style="margin:0">Pon los datos de tus dietas. Podrás cambiarlos cuando quieras en Ajustes.</p>
+    <div class="campos">
+      <label class="campo" for="cfgDia">El periodo empieza el día<input id="cfgDia" inputmode="numeric" autocomplete="off" placeholder="1"></label>
+      <span class="small muted" style="align-self:end">Por ejemplo, 16 si va del 16 al 15 del mes siguiente, o 1 si va por meses.</span>
+      <label class="campo" for="cfgDieta">Dieta completa (€)<input id="cfgDieta" inputmode="decimal" autocomplete="off" placeholder="0,00"></label>
+      <label class="campo" for="cfgMedia">Media dieta (€)<input id="cfgMedia" inputmode="decimal" autocomplete="off" placeholder="0,00"></label>
+    </div>
+    <label class="check" for="cfgNomina"><input type="checkbox" id="cfgNomina"><span>Si gasto más que mis dietas, me lo descuentan de la nómina</span></label>
+    <label class="check" for="cfgSobrante"><input type="checkbox" id="cfgSobrante"><span>Lo que no gasto no lo cobro (se lo queda la empresa)</span></label>
+    <div class="btns">
+      <button class="btn primary" data-action="empezar">Empezar</button>
+      <label class="btn" for="fileBackupSetup">Tengo una copia: restaurar</label>
+    </div>
+    <input type="file" id="fileBackupSetup" accept=".json,.txt,application/json,text/plain">
+    <div id="setupMsg"></div>
+  </section>
+
+  <section class="card" id="guia" aria-labelledby="h-guia" hidden>
+    <div class="sec-head"><h2 id="h-guia">Cómo funciona</h2><button class="btn" data-action="ayuda">Cerrar</button></div>
+    <div class="guia-txt" id="guiaTxt"></div>
+  </section>
+
+  <div class="hero ok" id="hero" aria-live="polite"></div>
+  <div class="info" id="info-hero" hidden></div>
+
+  <section class="card" aria-labelledby="h-gastos">
+    <div class="sec-head"><div class="tit"><h2 id="h-gastos">Gastos del periodo</h2><button class="info-btn" data-action="info" data-k="gastos" aria-expanded="false" aria-controls="info-gastos" aria-label="Qué es: Gastos del periodo">i</button></div><button class="btn" data-action="nuevo">+ Añadir gasto</button></div>
+    <div class="info" id="info-gastos" hidden></div>
+    <div class="tipos" id="tipos"></div>
+    <div id="editor"></div>
+    <div id="diasMsg"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-sueltas">
+    <div class="sec-head"><div class="tit"><h2 id="h-sueltas">Dietas sin día concreto</h2><button class="info-btn" data-action="info" data-k="sueltas" aria-expanded="false" aria-controls="info-sueltas" aria-label="Qué es: Dietas sin día concreto">i</button></div><span class="small muted">de este periodo</span></div>
+    <div class="info" id="info-sueltas" hidden></div>
+    <div class="sueltas" id="sueltas"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-dias">
+    <div class="sec-head"><div class="tit"><h2 id="h-dias">Días del periodo</h2><button class="info-btn" data-action="info" data-k="dias" aria-expanded="false" aria-controls="info-dias" aria-label="Qué es: Días del periodo">i</button></div></div>
+    <div class="info" id="info-dias" hidden></div>
+    <div class="leyenda">Toca la etiqueta para cambiarla: sin dieta → dieta → media dieta. Toca el importe para ver dónde gastaste y el + para añadir un gasto ese día.</div>
+    <div class="dias" id="dias"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-mov">
+    <div class="sec-head"><div class="tit"><h2 id="h-mov">Movimientos de la tarjeta</h2><button class="info-btn" data-action="info" data-k="mov" aria-expanded="false" aria-controls="info-mov" aria-label="Qué es: Movimientos de la tarjeta">i</button></div></div>
+    <div class="info" id="info-mov" hidden></div>
+    <div class="mov-info" id="movInfo"></div>
+    <div class="btns">
+      <a class="btn primary" id="irEdenred" href="https://empleados.edenred.es/" target="_blank" rel="noopener">Ir a Edenred</a>
+      <button class="btn" data-action="abrir-pegar" aria-expanded="false" aria-controls="pegarPanel">Pegar movimientos</button>
+      <label class="btn" for="fileMov">Importar archivo XLS</label>
+      <button class="btn danger" data-action="ask-borrar">Borrar movimientos</button>
+    </div>
+    <p class="desde" id="desdeHint"></p>
+    <div class="pegar" id="pegarPanel" hidden>
+      <label class="campo" for="txtPegar">Pega aquí la tabla de movimientos copiada de Edenred
+        <textarea id="txtPegar" rows="6" autocomplete="off" spellcheck="false" placeholder="15/10/2026  13:45:00  BAR EJEMPLO - C. MAYOR 1  Consumo  -12,50 €"></textarea>
+      </label>
+      <div class="btns">
+        <button class="btn primary" data-action="pegar-anadir">Añadir movimientos</button>
+        <button class="btn" data-action="pegar-portapapeles">Pegar del portapapeles</button>
+        <button class="btn" data-action="pegar-cerrar">Cancelar</button>
+      </div>
+    </div>
+    <input type="file" id="fileMov" accept=".xls,.xlsx,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv">
+    <div id="movMsg"></div>
+    <p class="small muted" style="margin:0">Solo se cuentan los consumos. Los movimientos repetidos no se cuentan dos veces.</p>
+  </section>
+
+  <section class="card" aria-labelledby="h-aj">
+    <div class="sec-head"><div class="tit"><h2 id="h-aj">Ajustes</h2><button class="info-btn" data-action="info" data-k="importes" aria-expanded="false" aria-controls="info-importes" aria-label="Qué es: Ajustes">i</button></div></div>
+    <div class="info" id="info-importes" hidden></div>
+    <div class="campos">
+      <label class="campo" for="impDieta">Dieta completa (€)
+        <input id="impDieta" inputmode="decimal" autocomplete="off">
+      </label>
+      <label class="campo" for="impMedia">Media dieta (€)
+        <input id="impMedia" inputmode="decimal" autocomplete="off">
+      </label>
+      <label class="campo" for="ajDia">El periodo empieza el día
+        <input id="ajDia" inputmode="numeric" autocomplete="off">
+      </label>
+    </div>
+    <label class="check" for="ajNomina"><input type="checkbox" id="ajNomina"><span>Si gasto más que mis dietas, me lo descuentan de la nómina</span></label>
+    <label class="check" for="ajSobrante"><input type="checkbox" id="ajSobrante"><span>Lo que no gasto no lo cobro (se lo queda la empresa)</span></label>
+  </section>
+
+  <section class="card" aria-labelledby="h-copia">
+    <div class="sec-head"><div class="tit"><h2 id="h-copia">Excel y copia de seguridad</h2><button class="info-btn" data-action="info" data-k="copia" aria-expanded="false" aria-controls="info-copia" aria-label="Qué es: Excel y copia de seguridad">i</button></div></div>
+    <div class="info" id="info-copia" hidden></div>
+    <div class="btns">
+      <button class="btn" data-action="export-csv">Exportar periodo a Excel</button>
+      <button class="btn" data-action="backup">Guardar copia</button>
+      <button class="btn" data-action="compartir-copia" id="btnCompartir" hidden>Compartir copia</button>
+      <label class="btn" for="fileBackup">Restaurar copia</label>
+    </div>
+    <input type="file" id="fileBackup" accept=".json,.txt,application/json,text/plain">
+    <div class="aviso" id="copiaInfo"></div>
+    <div id="copiaMsg"></div>
+  </section>
+
+  <footer class="pie">Mis dietas · App no oficial, sin relación con Edenred.</footer>
+</main>
+
+<script>
+"use strict";
+/* ------------------------------------------------------------------ utilidades */
+const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+const MESES_L = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const DIAS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+const p2 = n => String(n).padStart(2, "0");
+const isoOf = d => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
+const parseISO = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const hoyISO = () => isoOf(new Date());
+const fmtEur = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const eur = cents => fmtEur.format(cents / 100);
+const toCents = x => Math.round(Number(x) * 100);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fechaCorta = iso => { const d = parseISO(iso); return `${d.getDate()} ${MESES[d.getMonth()]}`; };
+const fechaLarga = iso => { const d = parseISO(iso); return `${p2(d.getDate())}/${p2(d.getMonth() + 1)}/${d.getFullYear()}`; };
+
+/* El periodo empieza el día elegido en Ajustes (1 a 28) y termina el día anterior del mes siguiente.
+   Con el día 1, el periodo es el mes entero. */
+const diaIni = () => S.ajustes.diaInicio || 1;
+function inicioPeriodo(iso) {
+  const d = parseISO(iso), k = diaIni();
+  return isoOf(d.getDate() >= k ? new Date(d.getFullYear(), d.getMonth(), k) : new Date(d.getFullYear(), d.getMonth() - 1, k));
+}
+function finPeriodo(inicio) { const d = parseISO(inicio); return isoOf(new Date(d.getFullYear(), d.getMonth() + 1, d.getDate() - 1)); }
+function moverPeriodo(inicio, delta) { const d = parseISO(inicio); return isoOf(new Date(d.getFullYear(), d.getMonth() + delta, d.getDate())); }
+function diasDe(inicio) {
+  const out = []; const fin = finPeriodo(inicio);
+  for (let d = parseISO(inicio); isoOf(d) <= fin; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) out.push(isoOf(d));
+  return out;
+}
+
+/* ------------------------------------------------------------------- estado */
+const S = { ajustes: { dieta: 0, media: 0, diaInicio: 1, nomina: false, sobrante: false, configurado: false }, marcas: {}, sueltas: {}, movs: {}, manuales: {}, saldo: null };
+const ui = { inicio: inicioPeriodo(hoyISO()), abierto: null, confirmar: null, editor: null };
+
+/* Un movimiento es único por fecha, hora e importe (el texto del sitio puede variar entre la web y el XLS). */
+const movKey = m => m.h ? `${m.f} ${m.h}|${m.i.toFixed(2)}` : `${m.f}|${m.i.toFixed(2)}|${m.s}`;
+const esConsumo = m => m.i < 0 && (!m.t || /^consumo/i.test(m.t));
+
+/* Por día: total gastado = tarjeta (archivo + a mano) + efectivo. Todo se resta de las dietas. */
+function indicePorDia() {
+  const idx = {};
+  const dia = f => idx[f] || (idx[f] = { cents: 0, tarjeta: 0, efectivo: 0, items: [] });
+  for (const m of Object.values(S.movs)) {
+    if (!esConsumo(m)) continue;
+    const c = toCents(-m.i);
+    const e = dia(m.f);
+    e.cents += c; e.tarjeta += c; e.items.push({ h: m.h, s: m.s, c, origen: "archivo" });
+  }
+  for (const g of Object.values(S.manuales)) {
+    const e = dia(g.f), c = toCents(g.i);
+    e.cents += c;
+    if (g.tipo === "efectivo") e.efectivo += c; else e.tarjeta += c;
+    e.items.push({ h: "", s: g.s, c, origen: g.tipo === "efectivo" ? "efectivo" : "mano", id: g.id });
+  }
+  for (const e of Object.values(idx)) e.items.sort((a, b) => (a.h || "99").localeCompare(b.h || "99"));
+  return idx;
+}
+
+function resumen(inicio, idx) {
+  const dias = diasDe(inicio);
+  const su = S.sueltas[inicio] || { c: 0, m: 0 };
+  let nC = su.c, nM = su.m, gasto = 0, consumos = 0, tarjeta = 0, efectivo = 0, nTarjeta = 0, nEfectivo = 0;
+  for (const d of dias) {
+    if (S.marcas[d] === "d") nC++;
+    else if (S.marcas[d] === "m") nM++;
+    const e = idx[d];
+    if (e) {
+      gasto += e.cents; tarjeta += e.tarjeta; efectivo += e.efectivo;
+      for (const it of e.items) { if (it.c <= 0) continue; if (it.origen === "efectivo") nEfectivo++; else nTarjeta++; }
+    }
+  }
+  const dietas = nC * toCents(S.ajustes.dieta) + nM * toCents(S.ajustes.media);
+  consumos = nTarjeta + nEfectivo;
+  return { dias, nC, nM, dietas, gasto, consumos, tarjeta, efectivo, nTarjeta, nEfectivo, queda: dietas - gasto };
+}
+
+/* ----------------------------------------------------------------- guardado */
+const LS_KEY = "mis-dietas-v1";
+function leerLocal() { try { const t = localStorage.getItem(LS_KEY); return t ? JSON.parse(t) : null; } catch (e) { return null; } }
+function escribirLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify(S)); almacenOK = true; } catch (e) { almacenOK = false; pintarEstado(); } }
+function aplicar(obj) {
+  if (!obj || typeof obj !== "object") return false;
+  if (obj.ajustes && typeof obj.ajustes === "object") {
+    const a = obj.ajustes;
+    const d = Number(a.dieta), m = Number(a.media);
+    if (Number.isFinite(d) && d >= 0) S.ajustes.dieta = d;
+    if (Number.isFinite(m) && m >= 0) S.ajustes.media = m;
+    if ("diaInicio" in a) {
+      const k = parseInt(a.diaInicio, 10);
+      if (k >= 1 && k <= 28) S.ajustes.diaInicio = k;
+      S.ajustes.nomina = !!a.nomina;
+      S.ajustes.sobrante = !!a.sobrante;
+      S.ajustes.configurado = a.configurado !== false;
+    } else {
+      /* Datos y copias de las primeras versiones: periodo del 16 al 15, descuento en nómina y sobrante para la empresa. */
+      Object.assign(S.ajustes, { diaInicio: 16, nomina: true, sobrante: true, configurado: true });
+    }
+  }
+  if (obj.marcas && typeof obj.marcas === "object") {
+    S.marcas = {};
+    for (const [k, v] of Object.entries(obj.marcas)) if (/^\d{4}-\d{2}-\d{2}$/.test(k) && (v === "d" || v === "m")) S.marcas[k] = v;
+  }
+  if (obj.sueltas && typeof obj.sueltas === "object") {
+    S.sueltas = {};
+    for (const [k, v] of Object.entries(obj.sueltas)) if (/^\d{4}-\d{2}-\d{2}$/.test(k) && v) S.sueltas[k] = { c: Math.max(0, parseInt(v.c, 10) || 0), m: Math.max(0, parseInt(v.m, 10) || 0) };
+  }
+  if (obj.movs && typeof obj.movs === "object") {
+    S.movs = {};
+    for (const m of Object.values(obj.movs)) {
+      if (!m || !/^\d{4}-\d{2}-\d{2}$/.test(m.f) || !Number.isFinite(Number(m.i))) continue;
+      const mov = { f: m.f, h: String(m.h || ""), s: String(m.s || "").slice(0, 80), i: Number(m.i), t: String(m.t || "").slice(0, 30) };
+      S.movs[movKey(mov)] = mov;
+    }
+  }
+  if (obj.manuales && typeof obj.manuales === "object") {
+    S.manuales = {};
+    for (const g of Object.values(obj.manuales)) {
+      if (!g || !/^\d{4}-\d{2}-\d{2}$/.test(g.f) || !/^[\w-]{1,40}$/.test(String(g.id || ""))) continue;
+      const i = Number(g.i);
+      if (!Number.isFinite(i) || i <= 0) continue;
+      S.manuales[g.id] = { id: String(g.id), f: g.f, i: Math.round(i * 100) / 100, s: String(g.s || "").slice(0, 80), tipo: g.tipo === "efectivo" || g.tipo === "aparte" ? "efectivo" : "tarjeta" };
+    }
+  }
+  if ("saldo" in obj) S.saldo = obj.saldo && Number.isFinite(Number(obj.saldo.valor)) ? { valor: Number(obj.saldo.valor), fecha: String(obj.saldo.fecha || "") } : null;
+  return true;
+}
+
+let almacenOK = true;
+function probarAlmacen() {
+  try { localStorage.setItem("mis-dietas-prueba", "1"); const ok = localStorage.getItem("mis-dietas-prueba") === "1"; localStorage.removeItem("mis-dietas-prueba"); return ok; }
+  catch (e) { return false; }
+}
+const COPIA_KEY = "mis-dietas-ultima-copia";
+function ultimaCopia() { try { return localStorage.getItem(COPIA_KEY); } catch (e) { return null; } }
+const nube = {
+  estado: "local", meses: new Set(),
+  guardar() { escribirLocal(); },
+  escribir() { escribirLocal(); return Promise.resolve(); },
+  async guardarTodo() { escribirLocal(); },
+};
+
+/* ------------------------------------------------------- lectura de archivos */
+async function unzip(buf) {
+  const dv = new DataView(buf), u8 = new Uint8Array(buf), td = new TextDecoder();
+  let eocd = -1;
+  for (let i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 65557); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  if (eocd < 0) throw new Error("zip");
+  const n = dv.getUint16(eocd + 10, true);
+  let p = dv.getUint32(eocd + 16, true);
+  const files = {};
+  for (let k = 0; k < n; k++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) throw new Error("zip");
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true);
+    const nlen = dv.getUint16(p + 28, true), elen = dv.getUint16(p + 30, true), clen = dv.getUint16(p + 32, true);
+    const off = dv.getUint32(p + 42, true);
+    files[td.decode(u8.subarray(p + 46, p + 46 + nlen))] = { method, csize, off };
+    p += 46 + nlen + elen + clen;
+  }
+  return {
+    async text(name) {
+      const f = files[name]; if (!f) return null;
+      const start = f.off + 30 + dv.getUint16(f.off + 26, true) + dv.getUint16(f.off + 28, true);
+      const data = u8.slice(start, start + f.csize);
+      if (f.method === 0) return td.decode(data);
+      if (f.method !== 8) throw new Error("zip");
+      const out = await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer();
+      return td.decode(out);
+    },
+  };
+}
+const xmlDoc = s => new DOMParser().parseFromString(s, "application/xml");
+const tags = (node, name) => Array.from(node.getElementsByTagNameNS("*", name));
+function colIndex(ref) { let n = 0; for (const ch of ref.replace(/\d+/g, "")) n = n * 26 + (ch.charCodeAt(0) - 64); return n - 1; }
+
+async function leerXlsx(buf) {
+  const z = await unzip(buf);
+  let hoja = "xl/worksheets/sheet1.xml";
+  const wb = await z.text("xl/workbook.xml"), rels = await z.text("xl/_rels/workbook.xml.rels");
+  if (wb && rels) {
+    const first = tags(xmlDoc(wb), "sheet")[0];
+    const rid = first && (first.getAttribute("r:id") || first.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id"));
+    const rel = tags(xmlDoc(rels), "Relationship").find(r => r.getAttribute("Id") === rid);
+    if (rel) { const t = rel.getAttribute("Target"); hoja = t.startsWith("/") ? t.slice(1) : "xl/" + t.replace(/^\.\//, ""); }
+  }
+  const ssTxt = await z.text("xl/sharedStrings.xml");
+  const ss = ssTxt ? tags(xmlDoc(ssTxt), "si").map(si => tags(si, "t").map(t => t.textContent).join("")) : [];
+  const shTxt = await z.text(hoja);
+  if (!shTxt) throw new Error("hoja");
+  const rows = [];
+  for (const row of tags(xmlDoc(shTxt), "row")) {
+    const arr = [];
+    let ci = 0;
+    for (const c of tags(row, "c")) {
+      const r = c.getAttribute("r"); if (r) ci = colIndex(r);
+      const t = c.getAttribute("t");
+      const v = tags(c, "v")[0];
+      let val = null;
+      if (t === "s") val = v ? ss[Number(v.textContent)] : null;
+      else if (t === "inlineStr") val = tags(c, "t").map(x => x.textContent).join("");
+      else if (t === "str" || t === "e") val = v ? v.textContent : null;
+      else if (t === "b") val = v ? v.textContent === "1" : null;
+      else if (v) val = Number(v.textContent);
+      arr[ci] = val; ci++;
+    }
+    const rn = Number(row.getAttribute("r"));
+    if (rn > 0) rows[rn - 1] = arr; else rows.push(arr);
+  }
+  return Array.from(rows, r => r || []);
+}
+
+function leerHtmlTabla(texto) {
+  const doc = new DOMParser().parseFromString(texto, "text/html");
+  return Array.from(doc.querySelectorAll("tr")).map(tr => Array.from(tr.querySelectorAll("th,td")).map(td => td.textContent.trim()));
+}
+function leerCsv(texto) {
+  const lineas = texto.replace(/^﻿/, "").split(/\r?\n/).filter(l => l.trim());
+  const sep = (lineas.find(l => /fecha/i.test(l)) || lineas[0] || "").includes(";") ? ";" : (lineas[0] || "").includes("\t") ? "\t" : ",";
+  return lineas.map(l => {
+    const out = []; let cur = "", q = false;
+    for (let i = 0; i < l.length; i++) {
+      const ch = l[i];
+      if (q) { if (ch === '"') { if (l[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+      else if (ch === '"') q = true; else if (ch === sep) { out.push(cur); cur = ""; } else cur += ch;
+    }
+    out.push(cur); return out.map(s => s.trim());
+  });
+}
+let sheetJs = null;
+function cargarSheetJs() {
+  if (sheetJs) return sheetJs;
+  sheetJs = new Promise((res, rej) => {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    s.onload = () => (window.XLSX ? res(window.XLSX) : rej(new Error("sheetjs")));
+    s.onerror = () => { sheetJs = null; rej(new Error("sheetjs")); };
+    document.head.appendChild(s);
+  });
+  return sheetJs;
+}
+async function leerConSheetJs(buf) {
+  const X = await cargarSheetJs();
+  const wb = X.read(new Uint8Array(buf), { type: "array" });
+  return X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true, defval: null });
+}
+async function leerTabla(file) {
+  const buf = await file.arrayBuffer();
+  const u8 = new Uint8Array(buf.slice(0, 8));
+  if (u8[0] === 0x50 && u8[1] === 0x4b) {
+    try { return await leerXlsx(buf); } catch (e) { return await leerConSheetJs(buf); }
+  }
+  if (u8[0] === 0xd0 && u8[1] === 0xcf && u8[2] === 0x11 && u8[3] === 0xe0) return await leerConSheetJs(buf);
+  const texto = new TextDecoder().decode(buf);
+  if (/<table/i.test(texto)) return leerHtmlTabla(texto);
+  return leerCsv(texto);
+}
+
+function parseFecha(v) {
+  if (v == null || v === "") return null;
+  if (typeof v === "number") {
+    if (v < 20000 || v > 80000) return null;
+    const d = new Date(Math.round((v - 25569) * 86400000));
+    return { f: `${d.getUTCFullYear()}-${p2(d.getUTCMonth() + 1)}-${p2(d.getUTCDate())}`, h: `${p2(d.getUTCHours())}:${p2(d.getUTCMinutes())}:${p2(d.getUTCSeconds())}` };
+  }
+  const s = String(v).trim();
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  let y, mo, d, h = "";
+  if (m) { y = +m[1]; mo = +m[2]; d = +m[3]; if (m[4]) h = `${p2(m[4])}:${m[5]}:${m[6] || "00"}`; }
+  else {
+    m = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})(?:,?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+    if (!m) return null;
+    d = +m[1]; mo = +m[2]; y = +m[3]; if (y < 100) y += 2000;
+    if (m[4]) h = `${p2(m[4])}:${m[5]}:${m[6] || "00"}`;
+  }
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  return { f: `${y}-${p2(mo)}-${p2(d)}`, h };
+}
+function parseImporte(v) {
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  if (v == null) return null;
+  let s = String(v).replace(/[€\s ]/g, "").replace(/[−–]/g, "-");
+  if (!s) return null;
+  if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+function extraerMovimientos(rows) {
+  let saldo = null, cab = -1, col = null;
+  rows.forEach((row, r) => {
+    const lc = (row || []).map(x => String(x ?? "").trim().toLowerCase());
+    if (saldo == null && lc[0] && lc[0].startsWith("saldo")) { const v = parseImporte(row[1]); if (v != null) saldo = v; }
+    if (cab < 0) {
+      const fi = lc.findIndex(x => x.startsWith("fecha")), ii = lc.findIndex(x => x.startsWith("importe"));
+      if (fi >= 0 && ii >= 0) { cab = r; col = { f: fi, i: ii, d: lc.findIndex(x => /detalle|concepto|comercio|descrip/.test(x)), t: lc.findIndex(x => x.startsWith("tipo")) }; }
+    }
+  });
+  const movs = [];
+  if (cab >= 0) for (let r = cab + 1; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const f = parseFecha(row[col.f]), i = parseImporte(row[col.i]);
+    if (!f || i == null) continue;
+    movs.push({
+      f: f.f, h: f.h, i: Math.round(i * 100) / 100,
+      s: col.d >= 0 ? String(row[col.d] ?? "").replace(/\s+/g, " ").trim().slice(0, 80) : "",
+      t: col.t >= 0 ? String(row[col.t] ?? "").trim().slice(0, 30) : "",
+    });
+  }
+  let ignorados = 0;
+  const consumos = movs.filter(m => {
+    const ok = col && col.t >= 0 ? /^consumo/i.test(m.t) : m.i < 0;
+    if (!ok) ignorados++;
+    return ok;
+  }).map(m => ({ ...m, i: -Math.abs(m.i) }));
+  return { movs: consumos, saldo, ignorados };
+}
+
+/* Texto copiado de la tabla de movimientos de empleados.edenred.es.
+   Acepta celdas separadas por tabuladores o saltos de línea, o la fila entera en una línea. */
+function parsePegado(texto) {
+  const tokens = String(texto).replace(/\u00a0/g, " ").split(/[\t\r\n]+/).map(t => t.replace(/\s+/g, " ").trim()).filter(Boolean);
+  const reFecha = /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?: (\d{1,2}:\d{2}(?::\d{2})?))?$/;
+  const reHora = /^\d{1,2}:\d{2}(?::\d{2})?$/;
+  const reImp = /^[+\-−–]? ?\d[\d.]*(?:,\d{1,2})? ?€?$/;
+  const reLinea = /^(\d{1,2}\/\d{1,2}\/\d{4}) (\d{1,2}:\d{2}(?::\d{2})?) (.+) (\S+) ([+\-−–]? ?\d[\d.]*(?:,\d{1,2})?) ?€?$/;
+  const movs = []; let ignorados = 0, saldo = null;
+  const hora = h => { const x = h.split(":"); return `${p2(x[0])}:${x[1]}:${x[2] || "00"}`; };
+  const anadir = (fecha, h, det, tipo, imp) => {
+    const f = parseFecha(fecha), v = parseImporte(imp);
+    if (!f || v == null || !tipo || /\d/.test(tipo)) return false;
+    if (!/^consumo/i.test(tipo)) { ignorados++; return true; }
+    movs.push({ f: f.f, h: h ? hora(h) : "", s: det.replace(/\s+/g, " ").trim().slice(0, 80), i: -Math.abs(Math.round(v * 100) / 100), t: tipo.slice(0, 30) });
+    return true;
+  };
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    if (saldo == null && /^saldo disponible/i.test(t)) {
+      const enLinea = t.replace(/^saldo disponible:?\s*/i, "");
+      const v = parseImporte(enLinea || tokens[i + 1] || "");
+      if (v != null) saldo = v;
+      continue;
+    }
+    let m = t.match(reLinea);
+    if (m) { anadir(m[1], m[2], m[3], m[4], m[5]); continue; }
+    m = t.match(reFecha);
+    if (!m) continue;
+    const cel = [];
+    let j = i + 1;
+    while (j < tokens.length && cel.length < 6 && !reFecha.test(tokens[j]) && !reLinea.test(tokens[j])) { cel.push(tokens[j]); j++; }
+    let h = m[4] || "";
+    if (!h && cel.length && reHora.test(cel[0])) h = cel.shift();
+    const k = cel.findIndex(x => reImp.test(x));
+    if (k < 1) continue;
+    if (anadir(`${m[1]}/${m[2]}/${m[3]}`, h, cel.slice(0, k - 1).join(" "), cel[k - 1], cel[k])) i = j - 1;
+  }
+  return { movs, saldo, ignorados };
+}
+
+/* Mete movimientos nuevos (del XLS o pegados), sin duplicar y sustituyendo los apuntados a mano iguales. */
+function incorporar(res, verbo) {
+  let nuevos = 0, sustituidos = 0;
+  const meses = new Set();
+  for (const m of res.movs) {
+    const k = movKey(m);
+    if (S.movs[k]) continue;
+    S.movs[k] = m; nuevos++; meses.add(m.f.slice(0, 7));
+    const c = toCents(-m.i);
+    const igual = Object.values(S.manuales).find(g => g.tipo === "tarjeta" && g.f === m.f && toCents(g.i) === c);
+    if (igual) { delete S.manuales[igual.id]; sustituidos++; }
+  }
+  const ids = [...meses].map(m => "mov-" + m);
+  if (sustituidos) ids.push("manuales");
+  if (res.saldo != null) { S.saldo = { valor: res.saldo, fecha: hoyISO() }; ids.push("config"); }
+  render();
+  nube.guardar(ids);
+  const rep = res.movs.length - nuevos;
+  const ign = res.ignorados ? ` ${res.ignorados} ${res.ignorados === 1 ? "movimiento que no es consumo se ha ignorado" : "movimientos que no son consumos se han ignorado"}.` : "";
+  const sus = sustituidos ? ` ${sustituidos} ${sustituidos === 1 ? "gasto apuntado a mano se ha sustituido" : "gastos apuntados a mano se han sustituido"} por el de Edenred.` : "";
+  const n = res.movs.length;
+  mensaje("movMsg", `${n} ${n === 1 ? "movimiento " + verbo.slice(0, -1) : "movimientos " + verbo}: ${nuevos} ${nuevos === 1 ? "nuevo" : "nuevos"}${rep ? `, ${rep} ya estaban` : ""}.${ign}${sus}`, "ok");
+}
+
+/* -------------------------------------------------------------------- pintar */
+const $ = id => document.getElementById(id);
+function pintarEstado() {
+  const el = $("saveState");
+  el.classList.toggle("mal", !almacenOK);
+  el.textContent = almacenOK ? "Guardado en este móvil" : "Chrome no está guardando tus datos aquí";
+  const c = ultimaCopia();
+  const tieneDatos = Object.keys(S.movs).length || Object.keys(S.marcas).length || Object.keys(S.sueltas).length || Object.keys(S.manuales).length;
+  let txt, tipo = "";
+  if (!almacenOK) { txt = "Chrome no deja guardar datos aquí. Guarda una copia antes de cerrar."; tipo = "error"; }
+  else if (c) { const dias = Math.floor((Date.now() - new Date(c).getTime()) / 86400000); txt = `Última copia: ${fechaLarga(isoOf(new Date(c)))}${dias >= 14 && tieneDatos ? `, hace ${dias} días. Conviene guardar otra.` : "."}`; if (dias >= 14 && tieneDatos) tipo = "error"; }
+  else txt = tieneDatos ? "Aún no has guardado ninguna copia. Si borras los datos de Chrome o cambias de móvil, la necesitarás." : "Tus datos se guardan solo en este móvil. Guarda una copia de vez en cuando.";
+  const box = $("copiaInfo"); if (box) { box.className = "aviso " + tipo; box.textContent = txt; }
+}
+
+function itemHtml(it) {
+  const tag = it.origen === "mano" ? '<span class="tag">tarjeta, a mano</span>' : it.origen === "efectivo" ? '<span class="tag efectivo">efectivo</span>' : "";
+  const hora = it.h ? `<span class="hora">${esc(it.h.slice(0, 5))}</span>` : "";
+  const nombre = esc(it.s || (it.origen === "archivo" ? "Sin detalle" : "Gasto"));
+  if (!it.id) return `<li><span>${hora}${nombre}</span><span class="num">${eur(it.c)}</span></li>`;
+  return `<li><button class="item-edit" data-action="editar" data-id="${esc(it.id)}" aria-label="Editar gasto ${nombre} de ${eur(it.c)}"><span>${nombre}${tag}<span class="lapiz" aria-hidden="true">✎</span></span><span class="num">${eur(it.c)}</span></button></li>`;
+}
+
+function abrirEditor(datos) {
+  ui.editor = datos;
+  const g = datos;
+  const importe = g.i ? String(g.i.toFixed(2)).replace(".", ",") : "";
+  $("editor").innerHTML = `<form class="editor" id="formGasto" novalidate>
+    <div class="titulo">${g.id ? "Editar gasto" : "Nuevo gasto"}</div>
+    <div class="campos">
+      <label class="campo" for="gFecha">Fecha<input type="date" id="gFecha" value="${esc(g.f)}" required></label>
+      <label class="campo" for="gImporte">Importe (€)<input id="gImporte" inputmode="decimal" autocomplete="off" placeholder="0,00" value="${esc(importe)}" required></label>
+    </div>
+    <label class="campo" for="gDonde">Dónde (opcional)<input id="gDonde" maxlength="80" autocomplete="off" placeholder="Por ejemplo: bar de la plaza" value="${esc(g.s || "")}"></label>
+    <fieldset class="pago"><legend>Cómo lo pagaste</legend>
+      <label for="gTipoT"><input type="radio" id="gTipoT" name="gTipo" value="tarjeta"${g.tipo !== "efectivo" ? " checked" : ""}><span>Con la tarjeta Edenred<br><span class="small muted">Si luego importas el archivo, se cambia por el de Edenred</span></span></label>
+      <label for="gTipoE"><input type="radio" id="gTipoE" name="gTipo" value="efectivo"${g.tipo === "efectivo" ? " checked" : ""}><span>En efectivo<br><span class="small muted">También se resta de tus dietas</span></span></label>
+    </fieldset>
+    <div class="btns">
+      <button class="btn primary" type="submit">Guardar</button>
+      <button class="btn" type="button" data-action="cerrar-editor">Cancelar</button>
+      ${g.id ? '<button class="btn danger" type="button" data-action="borrar-gasto">Borrar gasto</button>' : ""}
+    </div>
+    <div id="editorMsg"></div>
+  </form>`;
+  const form = $("formGasto");
+  form.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  if (!g.id) { try { $("gImporte").focus({ preventScroll: true }); } catch (e) { /* sin foco */ } }
+}
+function cerrarPegar() {
+  $("pegarPanel").hidden = true; $("txtPegar").value = "";
+  const b = document.querySelector("[data-action=abrir-pegar]"); if (b) b.setAttribute("aria-expanded", "false");
+}
+function cerrarEditor() { ui.editor = null; $("editor").innerHTML = ""; }
+
+function guardarGasto() {
+  const f = $("gFecha").value;
+  const i = parseImporte($("gImporte").value);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(f)) { mensaje("editorMsg", "Elige la fecha del gasto.", "error"); return; }
+  if (i == null || i <= 0) { mensaje("editorMsg", "Escribe el importe, por ejemplo 12,50.", "error"); return; }
+  const tipo = document.querySelector("input[name=gTipo]:checked")?.value === "efectivo" ? "efectivo" : "tarjeta";
+  const id = ui.editor && ui.editor.id ? ui.editor.id : "g" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const nuevo = !(ui.editor && ui.editor.id);
+  S.manuales[id] = { id, f, i: Math.round(i * 100) / 100, s: $("gDonde").value.replace(/\s+/g, " ").trim().slice(0, 80), tipo };
+  cerrarEditor();
+  ui.inicio = inicioPeriodo(f); ui.abierto = f;
+  render();
+  nube.guardar(["manuales"]);
+  mensaje("diasMsg", `${nuevo ? "Gasto añadido" : "Gasto actualizado"}: ${eur(toCents(i))} el ${fechaLarga(f)}${tipo === "efectivo" ? ", en efectivo" : ", con tarjeta"}.`, "ok");
+}
+
+function pintarSetup() {
+  const pendiente = !S.ajustes.configurado;
+  if (pendiente) $("app").setAttribute("data-setup", ""); else $("app").removeAttribute("data-setup");
+  $("setup").hidden = !pendiente;
+}
+
+function render() {
+  const idx = indicePorDia();
+  const R = resumen(ui.inicio, idx);
+  const fin = finPeriodo(ui.inicio);
+  const hoy = hoyISO();
+  const actual = ui.inicio === inicioPeriodo(hoy);
+
+  let restan = "";
+  if (actual) { const n = R.dias.filter(d => d > hoy).length; restan = n === 0 ? "Último día del periodo" : n === 1 ? "Queda 1 día" : `Quedan ${n} días`; }
+  else if (fin < hoy) restan = "Periodo cerrado";
+  else restan = "Periodo futuro";
+  $("rango").innerHTML = `${esc(fechaCorta(ui.inicio))} – ${esc(fechaCorta(fin))} ${parseISO(fin).getFullYear()}<small>${esc(restan)}${actual ? "" : ` · <button class="hoy" data-action="hoy">Ir a hoy</button>`}</small>`;
+
+  // cifra principal
+  const hero = $("hero");
+  const mal = R.queda < 0;
+  const abierto = fin >= hoy;
+  const justo = !mal && abierto && R.dietas > 0 && R.queda < toCents(S.ajustes.dieta);
+  hero.className = "hero " + (mal ? "bad" : justo ? "warn" : "ok");
+  const pct = R.dietas > 0 ? Math.min(100, (R.gasto / R.dietas) * 100) : (R.gasto > 0 ? 100 : 0);
+  const finTxt = `${parseISO(fin).getDate()} de ${MESES_L[parseISO(fin).getMonth()]}`;
+  let estado;
+  const reg = S.ajustes;
+  if (mal) estado = reg.nomina ? `Te descontarán ${eur(-R.queda)} de la nómina si el periodo cierra así.` : `Te has pasado ${eur(-R.queda)} de tus dietas en este periodo.`;
+  else if (R.queda === 0 && R.dietas > 0) estado = "Justo en el límite de tus dietas.";
+  else if (R.dietas === 0 && R.gasto === 0) estado = "Marca tus dietas e importa los movimientos de la tarjeta para ver cuánto te queda.";
+  else if (justo) estado = `Cuidado: te queda menos de una dieta completa.${reg.sobrante ? ` Lo que no gastes antes del ${finTxt} se lo queda la empresa.` : ""}`;
+  else if (fin < hoy) estado = reg.sobrante ? `Sobraron ${eur(R.queda)}: se los quedó la empresa.` : `Sobraron ${eur(R.queda)} de dietas en este periodo.`;
+  else estado = reg.sobrante ? `Lo que no gastes antes del ${finTxt} se lo queda la empresa.` : `Te quedan ${eur(R.queda)} de dietas hasta el ${finTxt}.`;
+
+  // ritmo de gasto (solo en el periodo actual)
+  const ritmo = [];
+  if (actual && R.dietas > 0) {
+    const restantes = R.dias.filter(d => d >= hoy).length;
+    const pasados = R.dias.filter(d => d <= hoy);
+    if (R.queda > 0) {
+      ritmo.push(restantes <= 1
+        ? `Hoy es el último día del periodo: te quedan <b>${eur(R.queda)}</b>.`
+        : `Para no pasarte: unos <b>${eur(Math.floor(R.queda / restantes))}</b> al día durante los ${restantes} días que quedan, hoy incluido.`);
+    }
+    const gastoHastaHoy = pasados.reduce((s, d) => s + (idx[d] ? idx[d].cents : 0), 0);
+    if (pasados.length >= 3 && restantes > 1 && gastoHastaHoy > 0) {
+      const prevision = Math.round(gastoHastaHoy / pasados.length * R.dias.length);
+      const dif = R.dietas - prevision;
+      ritmo.push(dif >= 0
+        ? `A este ritmo gastarás unos <b>${eur(prevision)}</b> en el periodo: con las dietas que llevas te sobrarían ${eur(dif)}.`
+        : `A este ritmo gastarás unos <b>${eur(prevision)}</b> en el periodo: con las dietas que llevas te faltarían <b>${eur(-dif)}</b>.`);
+    }
+  }
+  hero.innerHTML = `
+    <div class="label-row"><div class="label">${mal ? "Te has pasado" : "Te queda por gastar"}</div><button class="info-btn" data-action="info" data-k="hero" aria-expanded="${$("info-hero").hidden ? "false" : "true"}" aria-controls="info-hero" aria-label="Qué es: te queda por gastar">i</button></div>
+    <div class="big">${eur(Math.abs(R.queda))}</div>
+    <div class="barra" role="img" aria-label="Gastado ${Math.round(pct)} % de tus dietas"><span style="width:${pct.toFixed(1)}%"></span></div>
+    <div class="estado">${esc(estado)}</div>
+    ${ritmo.length ? `<div class="ritmo" id="ritmo">${ritmo.map(t => `<span>${t}</span>`).join("")}</div>` : ""}
+    <div class="cifras">
+      <div class="cifra"><span class="small muted">Dietas del periodo</span><b>${eur(R.dietas)}</b><span class="small muted">${R.nC} completas · ${R.nM} medias</span></div>
+      <div class="cifra"><span class="small muted">Gastado</span><b>${eur(R.gasto)}</b><span class="small muted">${R.consumos} ${R.consumos === 1 ? "gasto" : "gastos"}</span></div>
+    </div>`;
+
+  // apartado de gastos por tipo
+  const plural = (n, a, b) => `${n} ${n === 1 ? a : b}`;
+  $("tipos").innerHTML = `
+    <div class="tipo"><span><span class="punto" style="background:var(--accent)"></span>Con tarjeta Edenred</span><b>${eur(R.tarjeta)}</b><span class="small muted">${plural(R.nTarjeta, "gasto", "gastos")} · del archivo de Edenred y apuntados a mano</span></div>
+    <div class="tipo"><span><span class="punto" style="background:var(--warn)"></span>En efectivo</span><b>${eur(R.efectivo)}</b><span class="small muted">${plural(R.nEfectivo, "gasto", "gastos")} · también se restan de tus dietas</span></div>
+    <div class="tipo total"><span><b style="font-family:var(--font-body);font-size:inherit">Total gastado</b></span><b>${eur(R.gasto)}</b><span class="small muted">Se resta de tus dietas del periodo</span></div>`;
+
+  // dietas sueltas
+  const su = S.sueltas[ui.inicio] || { c: 0, m: 0 };
+  $("sueltas").innerHTML = [["c", "Dietas completas", S.ajustes.dieta], ["m", "Medias dietas", S.ajustes.media]].map(([k, txt, imp]) => `
+    <div class="stepper-row">
+      <div><div>${txt}</div><div class="small muted">${eur(toCents(imp))} cada una</div></div>
+      <div class="stepper">
+        <button class="icon-btn" data-action="suelta" data-k="${k}" data-d="-1" aria-label="Quitar una (${txt.toLowerCase()})">−</button>
+        <output aria-live="polite">${su[k]}</output>
+        <button class="icon-btn" data-action="suelta" data-k="${k}" data-d="1" aria-label="Añadir una (${txt.toLowerCase()})">+</button>
+      </div>
+    </div>`).join("");
+
+  // días
+  const limite = toCents(S.ajustes.dieta);
+  $("dias").innerHTML = R.dias.map(d => {
+    const dt = parseISO(d), wd = dt.getDay();
+    const marca = S.marcas[d] || "";
+    const e = idx[d];
+    const alto = e && limite > 0 && e.cents > limite;
+    const abierto = ui.abierto === d;
+    const hay = e && e.items.length;
+    const chip = marca === "d" ? "Dieta" : marca === "m" ? "Media dieta" : "Sin dieta";
+    return `<div class="dia${wd === 0 || wd === 6 ? " finde" : ""}${d === hoy ? " hoy-d" : ""}">
+      <div class="dia-row">
+        <div class="fecha"><b>${p2(dt.getDate())}</b><small>${DIAS[wd]} · ${MESES[dt.getMonth()]}</small></div>
+        <button class="chip ${marca}" data-action="marca" data-d="${d}" aria-label="${fechaLarga(d)}: ${chip}. Toca para cambiar">${chip}</button>
+        <button class="gasto${alto ? " alto" : ""}${hay ? "" : " vacio"}" data-action="abrir" data-d="${d}" aria-expanded="${abierto ? "true" : "false"}" aria-label="${fechaLarga(d)}: ${hay ? `gastado ${eur(e.cents)}` : "sin gastos"}. Toca para ver o añadir"><span class="num">${hay ? eur(e.cents) : "—"}</span>${alto ? "<small>más que una dieta</small>" : ""}${hay && e.efectivo ? `<small class="efectivo">${eur(e.efectivo)} en efectivo</small>` : ""}</button>
+        <button class="mas" data-action="nuevo" data-d="${d}" aria-label="Añadir gasto el ${fechaLarga(d)}">+</button>
+      </div>
+      ${abierto ? `<ul class="detalle">${hay ? e.items.map(itemHtml).join("") : `<li class="muted">Sin gastos este día.</li>`}<li><button class="btn add" data-action="nuevo" data-d="${d}">+ Añadir gasto este día</button></li></ul>` : ""}
+    </div>`;
+  }).join("");
+
+  // movimientos
+  const todos = Object.values(S.movs);
+  if (todos.length) {
+    const ult = todos.reduce((a, m) => (m.f > a ? m.f : a), "");
+    $("movInfo").innerHTML = `
+      <div><span class="small muted">Guardados</span><b>${todos.length}</b></div>
+      <div><span class="small muted">Último movimiento</span><b>${fechaLarga(ult)}</b></div>
+      ${S.saldo ? `<div><span class="small muted">Saldo en la tarjeta</span><b>${eur(toCents(S.saldo.valor))}</b><span class="small muted">según Edenred</span></div>` : ""}`;
+  } else {
+    $("movInfo").innerHTML = `<div class="vacio-estado" style="grid-column:1/-1"><span class="small muted">Todavía no hay movimientos. Importa el archivo de consumo de Edenred y aquí verás cuántos hay y la fecha del último.</span></div>`;
+  }
+  const ultimoMov = todos.reduce((a, m) => (m.f > a ? m.f : a), "");
+  const desde = ultimoMov || inicioPeriodo(hoy);
+  $("desdeHint").innerHTML = `En Edenred pon <b>Desde: ${fechaLarga(desde)}</b> y pulsa Buscar. Los pagos pueden tardar hasta 24 horas en aparecer.`;
+  if (ui.confirmar === "borrar") {
+    $("movMsg").innerHTML = `<div class="confirmar"><span>Se borrarán los ${todos.length} movimientos guardados. Tus dietas no se tocan.</span>
+      <div class="btns"><button class="btn danger solid" data-action="borrar">Sí, borrar</button><button class="btn" data-action="cancelar">Cancelar</button></div></div>`;
+  }
+
+  // ajustes (sin pisar lo que se está escribiendo)
+  for (const [id, v] of [["impDieta", S.ajustes.dieta], ["impMedia", S.ajustes.media], ["ajDia", S.ajustes.diaInicio]]) {
+    const inp = $(id);
+    if (document.activeElement !== inp) inp.value = String(v).replace(".", ",");
+  }
+  $("ajNomina").checked = !!S.ajustes.nomina;
+  $("ajSobrante").checked = !!S.ajustes.sobrante;
+  pintarSetup();
+  pintarEstado();
+}
+
+function mensaje(id, texto, tipo) { $(id).innerHTML = texto ? `<div class="aviso ${tipo || ""}">${esc(texto)}</div>` : ""; }
+
+/* ------------------------------------------------------------------- ayudas */
+const AYUDA = {
+  periodo: ["El periodo", [
+    "Las dietas van por periodos: empiezan el día que pongas en Ajustes y terminan el día anterior del mes siguiente (por ejemplo, del 16 al 15). Si empiezan el día 1, el periodo es el mes entero.",
+    "Al abrir la app ves el periodo de hoy. Con ‹ y › vas a otros periodos, y con «Ir a hoy» vuelves al actual.",
+    "Cada periodo tiene los días que le tocan según el mes."]],
+  hero: ["Te queda por gastar", [
+    "Son tus dietas del periodo menos todo lo que has gastado, con tarjeta y en efectivo.",
+    "Si sale en rojo, te has pasado de tus dietas. Si en Ajustes marcas que te lo descuentan de la nómina, te dice cuánto te descontarán. Si marcas que lo que sobra se lo queda la empresa, te lo recuerda.",
+    "En naranja: te queda menos de una dieta completa. Es el aviso para frenar antes de llegar al rojo.",
+    "Debajo ves cuánto puedes gastar al día hasta el final del periodo para no pasarte. A partir del tercer día, también una previsión: lo que gastarás en todo el periodo si sigues al mismo ritmo, comparado con las dietas que llevas apuntadas.",
+    "La barra muestra qué parte de tus dietas llevas gastada."]],
+  gastos: ["Gastos del periodo", [
+    "Suma lo gastado en el periodo en dos partes: con la tarjeta Edenred (lo que traes de Edenred y lo que apuntas a mano con tarjeta) y en efectivo. Las dos se restan de tus dietas.",
+    "«+ Añadir gasto» apunta un gasto a mano con la fecha de hoy. Para cambiarlo o borrarlo, abre su día y toca el gasto."]],
+  sueltas: ["Dietas sin día concreto", [
+    "Para las dietas que no quieres marcar en un día. Pulsa + o − y se suman a las que marques en los días.",
+    "Son de este periodo: al pasar a otro periodo empiezan en 0."]],
+  dias: ["Días del periodo", [
+    "Toca la etiqueta de un día para cambiarla: sin dieta → dieta → media dieta → sin dieta.",
+    "El importe es lo gastado ese día. Tócalo para ver dónde fue y a qué hora. En naranja, los días en que gastaste más que una dieta completa.",
+    "El + de cada día apunta un gasto en esa fecha."]],
+  mov: ["Movimientos de la tarjeta", [
+    "«Ir a Edenred» abre la web de Edenred en otra pestaña. Debajo te digo qué fecha poner en «Desde» para traer solo lo nuevo.",
+    "Hay dos formas de traer los movimientos: copiar la tabla de movimientos en Edenred y pulsar «Pegar movimientos», o descargar el XLS en Edenred y pulsar «Importar archivo XLS».",
+    "Para copiar la tabla: mantén pulsada la primera fecha, arrastra hasta el último importe y pulsa Copiar. «Seleccionar todo» también vale: la app se queda solo con las filas de movimientos.",
+    "Solo se cuentan los consumos. Recargas, devoluciones y demás tipos se ignoran.",
+    "Puedes traer movimientos que se solapen: uno repetido no se cuenta dos veces. Si habías apuntado a mano un gasto con tarjeta del mismo día e importe, se cambia por el de Edenred.",
+    "Los pagos pueden tardar hasta 24 horas en aparecer en Edenred.",
+    "«Borrar movimientos» quita solo los traídos de Edenred. Tus dietas y tus gastos a mano se quedan."]],
+  importes: ["Ajustes", [
+    "Lo que te pagan por cada dieta completa y por cada media dieta. Si los cambias, se recalculan todos los periodos, también los anteriores.",
+    "El día en que empieza tu periodo, del 1 al 28. Si lo cambias, las dietas sin día concreto que ya apuntaste se quedan en el periodo antiguo.",
+    "Las dos casillas son las reglas de tu empresa. Solo cambian los avisos (descuento en nómina y qué pasa con lo que sobra), no las cuentas."]],
+  copia: ["Excel y copia de seguridad", [
+    "«Exportar periodo a Excel» descarga el periodo que estás viendo en un archivo CSV que se abre con Excel: días, dietas, gastos con tarjeta y en efectivo, y los totales.",
+    "«Guardar copia» descarga todos tus datos en un archivo en la carpeta Descargas.",
+    "«Compartir copia» abre el menú de compartir del móvil: puedes guardarla en Drive, en Archivos eligiendo la carpeta, o mandártela por correo o WhatsApp. Se comparte como archivo .txt porque Android no deja compartir archivos .json, pero se restaura igual.",
+    "«Restaurar copia» recupera tus datos desde una copia (.json o .txt) en este móvil o en otro, y sustituye lo que haya."]],
+  instalar: ["Instalar y compartir", [
+    "Pulsa «Instalar app» arriba (o en Chrome ⋮ → Instalar aplicación). Tendrás su icono, se abrirá a pantalla completa y funcionará sin conexión.",
+    "Con la app instalada, aparece «Mis dietas» en el menú de compartir de Android: en Edenred selecciona la tabla de movimientos y pulsa Compartir → Mis dietas, o comparte el XLS descargado. Se importa solo. También puedes compartir una copia de seguridad para restaurarla.",
+    "Cuando haya una versión nueva, se actualiza sola la próxima vez que la abras con conexión."]],
+  aviso: ["App no oficial", [
+    "Esta app no es de Edenred ni tiene relación con Edenred. Solo lee lo que tú le das: el archivo o la tabla de movimientos que copias de su web."]],
+  guardado: ["Dónde se guardan tus datos", [
+    "Tus datos se guardan solo en este móvil, dentro de la app. Nadie más los ve: en internet solo está el programa. Si desinstalas la app, borras los datos de Chrome o cambias de móvil, se pierden: guarda una copia de vez en cuando.", "Arriba a la derecha ves si se está guardando bien."]],
+};
+function pintarAyudas() {
+  for (const [k, [, parrafos]] of Object.entries(AYUDA)) {
+    const box = $("info-" + k);
+    if (box) box.innerHTML = parrafos.map(t => `<p>${esc(t)}</p>`).join("");
+  }
+  $("guiaTxt").innerHTML = ["periodo", "hero", "gastos", "dias", "sueltas", "mov", "importes", "copia", "instalar", "guardado", "aviso"]
+    .map(k => `<div><h3>${esc(AYUDA[k][0])}</h3>${AYUDA[k][1].map(t => `<p>${esc(t)}</p>`).join("")}</div>`).join("");
+}
+
+/* ------------------------------------------------------------------- acciones */
+document.addEventListener("click", ev => {
+  const b = ev.target.closest("[data-action]");
+  if (!b) return;
+  const a = b.dataset.action;
+  if (a === "info") {
+    const box = $("info-" + b.dataset.k);
+    if (!box) return;
+    box.hidden = !box.hidden;
+    b.setAttribute("aria-expanded", box.hidden ? "false" : "true");
+  }
+  else if (a === "ayuda") {
+    const g = $("guia"); g.hidden = !g.hidden;
+    document.querySelector(".ayuda-btn").setAttribute("aria-expanded", g.hidden ? "false" : "true");
+    if (!g.hidden) g.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }
+  else if (a === "prev" || a === "next") { ui.inicio = moverPeriodo(ui.inicio, a === "prev" ? -1 : 1); ui.abierto = null; render(); }
+  else if (a === "hoy") { ui.inicio = inicioPeriodo(hoyISO()); ui.abierto = null; render(); }
+  else if (a === "marca") {
+    const d = b.dataset.d, cur = S.marcas[d] || "";
+    const sig = cur === "" ? "d" : cur === "d" ? "m" : "";
+    if (sig) S.marcas[d] = sig; else delete S.marcas[d];
+    render(); nube.guardar(["marcas"], 800);
+  }
+  else if (a === "suelta") {
+    const k = b.dataset.k, su = Object.assign({ c: 0, m: 0 }, S.sueltas[ui.inicio]);
+    su[k] = Math.max(0, su[k] + Number(b.dataset.d));
+    if (su.c === 0 && su.m === 0) delete S.sueltas[ui.inicio]; else S.sueltas[ui.inicio] = su;
+    render(); nube.guardar(["marcas"], 800);
+  }
+  else if (a === "abrir") { ui.abierto = ui.abierto === b.dataset.d ? null : b.dataset.d; render(); }
+  else if (a === "nuevo") {
+    const hoy = hoyISO();
+    const f = b.dataset.d || (hoy >= ui.inicio && hoy <= finPeriodo(ui.inicio) ? hoy : ui.inicio);
+    mensaje("diasMsg", ""); abrirEditor({ f, i: 0, s: "", tipo: "tarjeta" });
+  }
+  else if (a === "editar") { const g = S.manuales[b.dataset.id]; if (g) { mensaje("diasMsg", ""); abrirEditor({ ...g }); } }
+  else if (a === "cerrar-editor") cerrarEditor();
+  else if (a === "borrar-gasto") {
+    const g = ui.editor && S.manuales[ui.editor.id];
+    if (!g) { cerrarEditor(); return; }
+    delete S.manuales[g.id];
+    cerrarEditor(); render(); nube.guardar(["manuales"]);
+    mensaje("diasMsg", `Gasto borrado: ${eur(toCents(g.i))} del ${fechaLarga(g.f)}.`, "ok");
+  }
+  else if (a === "ask-borrar") {
+    if (!Object.keys(S.movs).length) { mensaje("movMsg", "No hay movimientos que borrar."); return; }
+    ui.confirmar = "borrar"; render();
+  }
+  else if (a === "cancelar") { ui.confirmar = null; mensaje("movMsg", ""); render(); }
+  else if (a === "borrar") {
+    const meses = new Set(Object.values(S.movs).map(m => m.f.slice(0, 7)));
+    for (const m of nube.meses) meses.add(m);
+    S.movs = {}; S.saldo = null; ui.confirmar = null; ui.abierto = null;
+    escribirLocal();
+    for (const mes of meses) nube.escribir("mov-" + mes, true);
+    nube.escribir("config");
+    render(); mensaje("movMsg", "Movimientos borrados.", "ok");
+  }
+  else if (a === "restaurar") restaurar();
+  else if (a === "cancelar-copia") { ui.pendiente = null; mensaje("copiaMsg", ""); }
+  else if (a === "abrir-pegar") {
+    const panel = $("pegarPanel"); panel.hidden = !panel.hidden;
+    b.setAttribute("aria-expanded", panel.hidden ? "false" : "true");
+    if (!panel.hidden) { ui.confirmar = null; mensaje("movMsg", ""); try { $("txtPegar").focus({ preventScroll: true }); } catch (e) { /* sin foco */ } }
+  }
+  else if (a === "pegar-cerrar") cerrarPegar();
+  else if (a === "pegar-portapapeles") {
+    if (!navigator.clipboard || !navigator.clipboard.readText) { mensaje("movMsg", "Mantén pulsado el recuadro y elige Pegar.", "error"); return; }
+    navigator.clipboard.readText().then(t => {
+      if (!t || !t.trim()) { mensaje("movMsg", "El portapapeles está vacío. Copia antes la tabla de movimientos en Edenred.", "error"); return; }
+      $("txtPegar").value = t; mensaje("movMsg", "");
+    }).catch(() => mensaje("movMsg", "Chrome no ha dejado leer el portapapeles. Mantén pulsado el recuadro y elige Pegar.", "error"));
+  }
+  else if (a === "pegar-anadir") {
+    const texto = $("txtPegar").value;
+    if (!texto.trim()) { mensaje("movMsg", "Pega primero la tabla de movimientos copiada de Edenred.", "error"); return; }
+    const res = parsePegado(texto);
+    if (!res.movs.length) {
+      mensaje("movMsg", res.ignorados ? "En lo que has pegado no hay consumos, solo movimientos de otro tipo." : "No he encontrado movimientos en lo que has pegado. Copia la tabla de Edenred desde la primera fecha hasta el último importe.", "error");
+      return;
+    }
+    cerrarPegar();
+    incorporar(res, "pegados");
+  }
+  else if (a === "empezar") empezar();
+  else if (a === "export-csv") exportarCsv();
+  else if (a === "backup") guardarCopia();
+  else if (a === "compartir-copia") compartirCopia();
+});
+
+document.addEventListener("submit", ev => {
+  if (ev.target && ev.target.id === "formGasto") { ev.preventDefault(); guardarGasto(); }
+});
+
+$("fileMov").addEventListener("change", ev => {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = "";
+  if (file) importarArchivo(file);
+});
+async function importarArchivo(file) {
+  ui.confirmar = null;
+  mensaje("movMsg", "Leyendo el archivo…");
+  let res;
+  try { res = extraerMovimientos(await leerTabla(file)); }
+  catch (e) { mensaje("movMsg", "No he podido abrir este archivo. Descárgalo otra vez desde la web de Edenred (consumo, en Excel) y vuelve a importarlo.", "error"); return; }
+  if (!res.movs.length) {
+    mensaje("movMsg", res.ignorados ? "Este archivo no tiene consumos: solo trae movimientos de otro tipo, que no se cuentan." : "Este archivo no tiene movimientos que pueda leer. Tiene que ser el de consumo de Edenred, con las columnas Fecha e Importe.", "error");
+    return;
+  }
+  incorporar(res, "leídos");
+}
+
+function empezar() {
+  const k = parseInt($("cfgDia").value, 10);
+  const d = parseImporte($("cfgDieta").value);
+  const m = $("cfgMedia").value.trim() === "" ? 0 : parseImporte($("cfgMedia").value);
+  if (!(k >= 1 && k <= 28)) { mensaje("setupMsg", "Escribe el día en que empieza tu periodo, del 1 al 28.", "error"); return; }
+  if (d == null || d <= 0) { mensaje("setupMsg", "Escribe cuánto te pagan por una dieta completa, por ejemplo 32.", "error"); return; }
+  if (m == null || m < 0) { mensaje("setupMsg", "Escribe cuánto te pagan por una media dieta, o déjalo vacío si no tienes.", "error"); return; }
+  Object.assign(S.ajustes, { diaInicio: k, dieta: Math.round(d * 100) / 100, media: Math.round(m * 100) / 100, nomina: $("cfgNomina").checked, sobrante: $("cfgSobrante").checked, configurado: true });
+  ui.inicio = inicioPeriodo(hoyISO());
+  mensaje("setupMsg", "");
+  render();
+  nube.guardar(["config"]);
+  window.scrollTo(0, 0);
+}
+
+function guardarAjuste(id, key) {
+  const inp = $(id);
+  const v = parseImporte(inp.value);
+  if (v == null || v < 0) { inp.value = String(S.ajustes[key]).replace(".", ","); return; }
+  if (v === S.ajustes[key]) return;
+  S.ajustes[key] = Math.round(v * 100) / 100;
+  render(); nube.guardar(["config"], 600);
+}
+for (const [id, key] of [["impDieta", "dieta"], ["impMedia", "media"]]) {
+  $(id).addEventListener("change", () => guardarAjuste(id, key));
+  $(id).addEventListener("keydown", e => { if (e.key === "Enter") e.target.blur(); });
+}
+$("ajDia").addEventListener("change", () => {
+  const k = parseInt($("ajDia").value, 10);
+  if (!(k >= 1 && k <= 28)) { $("ajDia").value = String(S.ajustes.diaInicio); return; }
+  if (k === S.ajustes.diaInicio) return;
+  S.ajustes.diaInicio = k;
+  ui.inicio = inicioPeriodo(hoyISO()); ui.abierto = null;
+  render(); nube.guardar(["config"], 600);
+});
+$("ajDia").addEventListener("keydown", e => { if (e.key === "Enter") e.target.blur(); });
+for (const [id, key] of [["ajNomina", "nomina"], ["ajSobrante", "sobrante"]]) {
+  $(id).addEventListener("change", () => { S.ajustes[key] = $(id).checked; render(); nube.guardar(["config"], 600); });
+}
+
+/* --------------------------------------------------------- Excel y copias */
+function csvPeriodo() {
+  const idx = indicePorDia(); const R = resumen(ui.inicio, idx);
+  const n = c => (c / 100).toFixed(2).replace(".", ",");
+  const q = s => `"${String(s).replace(/"/g, '""')}"`;
+  const filas = [["Fecha", "Día", "Dieta", "Media dieta", "Tarjeta (€)", "Efectivo (€)", "Dónde"].join(";")];
+  const donde = e => e ? e.items.map(it => (it.s || "Gasto") + (it.origen === "mano" ? " (a mano)" : it.origen === "efectivo" ? " (efectivo)" : "")).join(" | ") : "";
+  for (const d of R.dias) {
+    const e = idx[d], mk = S.marcas[d];
+    filas.push([fechaLarga(d), DIAS[parseISO(d).getDay()], mk === "d" ? 1 : "", mk === "m" ? 1 : "", e && e.tarjeta ? n(e.tarjeta) : "", e && e.efectivo ? n(e.efectivo) : "", q(donde(e))].join(";"));
+  }
+  const su = S.sueltas[ui.inicio] || { c: 0, m: 0 };
+  filas.push("");
+  filas.push(["Dietas completas sin día", "", su.c, "", "", "", ""].join(";"));
+  filas.push(["Medias dietas sin día", "", "", su.m, "", "", ""].join(";"));
+  filas.push(["Total dietas", "", R.nC, R.nM, "", "", ""].join(";"));
+  filas.push(["Dietas del periodo (€)", "", "", "", n(R.dietas), "", ""].join(";"));
+  filas.push(["Gastado con tarjeta (€)", "", "", "", n(R.tarjeta), "", ""].join(";"));
+  filas.push(["Gastado en efectivo (€)", "", "", "", "", n(R.efectivo), ""].join(";"));
+  filas.push(["Total gastado (€)", "", "", "", n(R.gasto), "", ""].join(";"));
+  filas.push([R.queda < 0 ? (S.ajustes.nomina ? "Descuento en nómina (€)" : "Te has pasado (€)") : "Te queda por gastar (€)", "", "", "", n(Math.abs(R.queda)), "", ""].join(";"));
+  return "﻿" + filas.join("\r\n") + "\r\n";
+}
+function ofrecerArchivo(nombre, datos, idMsg) {
+  try {
+    const tipo = nombre.endsWith(".csv") ? "text/csv;charset=utf-8" : "application/json";
+    const url = URL.createObjectURL(new Blob([datos], { type: tipo }));
+    const a = document.createElement("a");
+    a.href = url; a.download = nombre; a.rel = "noopener";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    mensaje(idMsg, `Descargado: ${nombre}. Lo tienes en la carpeta Descargas.`, "ok");
+    return true;
+  } catch (e) {
+    mensaje(idMsg, "No se pudo descargar el archivo en este móvil.", "error");
+    return false;
+  }
+}
+function exportarCsv() {
+  const nombre = `dietas_${fechaLarga(ui.inicio).replace(/\//g, "-")}_al_${fechaLarga(finPeriodo(ui.inicio)).replace(/\//g, "-")}.csv`;
+  ofrecerArchivo(nombre, csvPeriodo(), "copiaMsg");
+}
+function datosCopia() { return JSON.stringify({ app: "mis-dietas", version: 2, guardado: new Date().toISOString(), ...S }); }
+function marcarCopia() { try { localStorage.setItem(COPIA_KEY, new Date().toISOString()); } catch (e) { /* sin almacenamiento */ } pintarEstado(); }
+function guardarCopia() {
+  const datos = datosCopia();
+  if (ofrecerArchivo(`copia_mis_dietas_${hoyISO()}.json`, datos, "copiaMsg")) {
+    try { localStorage.setItem(COPIA_KEY, new Date().toISOString()); } catch (e) { /* sin almacenamiento */ }
+    pintarEstado();
+  }
+}
+
+/* Compartir la copia con el menú de Android (Drive, Archivos, correo…).
+   Android no deja compartir .json desde Chrome, así que va como .txt con el mismo contenido. */
+function archivoCopiaCompartible() {
+  return new File([datosCopia()], `copia_mis_dietas_${hoyISO()}.txt`, { type: "text/plain" });
+}
+function puedeCompartirArchivos() {
+  try {
+    return !!(navigator.share && navigator.canShare && navigator.canShare({ files: [new File(["{}"], "prueba.txt", { type: "text/plain" })] }));
+  } catch (e) { return false; }
+}
+async function compartirCopia() {
+  const archivo = archivoCopiaCompartible();
+  try {
+    await navigator.share({ files: [archivo], title: "Copia de Mis dietas" });
+    marcarCopia();
+    mensaje("copiaMsg", `Copia compartida: ${archivo.name}. Para recuperarla, pulsa «Restaurar copia» y elige ese archivo.`, "ok");
+  } catch (e) {
+    if (e && e.name === "AbortError") { mensaje("copiaMsg", ""); return; }
+    mensaje("copiaMsg", "No se pudo abrir el menú de compartir. Usa «Guardar copia» para descargarla.", "error");
+  }
+}
+async function leerCopia(file) {
+  let obj;
+  try { obj = JSON.parse(await file.text()); } catch (e) { obj = null; }
+  return obj && obj.app === "mis-dietas" ? obj : null;
+}
+$("fileBackupSetup").addEventListener("change", async ev => {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = "";
+  if (!file) return;
+  const obj = await leerCopia(file);
+  if (!obj) { mensaje("setupMsg", "Ese archivo no es una copia de Mis dietas.", "error"); return; }
+  ui.pendiente = obj;
+  await restaurar();
+  window.scrollTo(0, 0);
+});
+$("fileBackup").addEventListener("change", async ev => {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = "";
+  if (!file) return;
+  const obj = await leerCopia(file);
+  if (!obj) { mensaje("copiaMsg", "Ese archivo no es una copia de Mis dietas.", "error"); return; }
+  ofrecerRestaurar(obj);
+});
+function ofrecerRestaurar(obj) {
+  ui.pendiente = obj;
+  const fecha = obj.guardado ? fechaLarga(isoOf(new Date(obj.guardado))) : "fecha desconocida";
+  const nd = Object.keys(obj.marcas || {}).length, nm = Object.keys(obj.movs || {}).length + Object.keys(obj.manuales || {}).length;
+  $("copiaMsg").innerHTML = `<div class="confirmar"><span>Se cambiarán tus datos actuales por los de la copia del ${esc(fecha)} (${nd} días marcados, ${nm} movimientos).</span>
+    <div class="btns"><button class="btn danger solid" data-action="restaurar">Restaurar</button><button class="btn" data-action="cancelar-copia">Cancelar</button></div></div>`;
+}
+async function restaurar() {
+  const obj = ui.pendiente; ui.pendiente = null;
+  if (!obj) return;
+  const antes = new Set(Object.values(S.movs).map(m => m.f.slice(0, 7)));
+  S.marcas = {}; S.sueltas = {}; S.movs = {}; S.manuales = {}; S.saldo = null;
+  aplicar(obj);
+  ui.inicio = inicioPeriodo(hoyISO()); ui.abierto = null;
+  for (const m of antes) nube.meses.add(m);
+  await nube.guardarTodo();
+  render();
+  mensaje("copiaMsg", `Copia restaurada: ${Object.keys(S.marcas).length} días marcados y ${Object.keys(S.movs).length} movimientos.`, "ok");
+}
+
+/* --------------------------------------------------------------------- inicio */
+pintarAyudas();
+$("btnCompartir").hidden = !puedeCompartirArchivos();
+almacenOK = probarAlmacen();
+aplicar(leerLocal());
+ui.inicio = inicioPeriodo(hoyISO());
+render();
+</script>
+
+<script>
+"use strict";
+/* --------------------------------------------- app instalable: service worker, instalar y compartir */
+if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+  navigator.serviceWorker.register("sw.js").catch(() => { /* sin modo sin conexión */ });
+}
+let avisoInstalar = null;
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); avisoInstalar = e; $("btnInstalar").hidden = false; });
+window.addEventListener("appinstalled", () => { avisoInstalar = null; $("btnInstalar").hidden = true; });
+$("btnInstalar").addEventListener("click", async () => {
+  if (!avisoInstalar) return;
+  const e = avisoInstalar; avisoInstalar = null;
+  try { e.prompt(); await e.userChoice; } catch (err) { /* el viewer decide */ }
+  $("btnInstalar").hidden = true;
+});
+
+/* Lo que llega desde el menú de compartir de Android (lo guarda sw.js y abre ?compartido=1). */
+async function recibirCompartido() {
+  history.replaceState(null, "", location.pathname);
+  const irAMovimientos = () => { const s = document.querySelector("section[aria-labelledby=h-mov]"); if (s && S.ajustes.configurado) s.scrollIntoView({ block: "start" }); };
+  const avisar = (t, tipo) => { mensaje(S.ajustes.configurado ? "movMsg" : "setupMsg", t, tipo); };
+  let archivo = null, texto = "";
+  try {
+    const cache = await caches.open("mis-dietas-compartido");
+    const rf = await cache.match("compartido-archivo"), rt = await cache.match("compartido-texto");
+    await cache.delete("compartido-archivo"); await cache.delete("compartido-texto");
+    if (rf) { const b = await rf.blob(); archivo = new File([b], decodeURIComponent(rf.headers.get("X-Nombre") || "archivo"), { type: b.type }); }
+    if (rt) texto = await rt.text();
+  } catch (e) { avisar("No he podido leer lo que has compartido. Prueba otra vez o usa «Pegar movimientos».", "error"); return; }
+  if (archivo) {
+    const copia = /\.(json|txt)$/i.test(archivo.name) ? await leerCopia(archivo) : null;
+    if (copia) { recibirCopia(copia); return; }
+    if (/\.txt$/i.test(archivo.name)) texto = await archivo.text();
+    else { await importarArchivo(archivo); irAMovimientos(); return; }
+  }
+  if (!texto.trim()) { avisar("No ha llegado nada que importar. Comparte la tabla de movimientos o el archivo XLS de Edenred.", "error"); return; }
+  let obj = null;
+  try { obj = JSON.parse(texto); } catch (e) { obj = null; }
+  if (obj && obj.app === "mis-dietas") { recibirCopia(obj); return; }
+  const res = parsePegado(texto);
+  if (!res.movs.length) {
+    avisar(res.ignorados ? "En lo que has compartido no hay consumos, solo movimientos de otro tipo." : "No he encontrado movimientos en lo que has compartido. Selecciona la tabla de Edenred, desde la primera fecha hasta el último importe.", "error");
+    irAMovimientos(); return;
+  }
+  incorporar(res, "compartidos");
+  if (!S.ajustes.configurado) mensaje("setupMsg", `He guardado ${res.movs.length} movimientos. Configura tus dietas para verlos.`, "ok");
+  irAMovimientos();
+}
+function recibirCopia(obj) {
+  if (!S.ajustes.configurado) { ui.pendiente = obj; restaurar(); return; }
+  ofrecerRestaurar(obj);
+  const s = document.querySelector("section[aria-labelledby=h-copia]"); if (s) s.scrollIntoView({ block: "start" });
+}
+if (new URLSearchParams(location.search).has("compartido")) recibirCompartido();
+</script>
+</body>
+</html>

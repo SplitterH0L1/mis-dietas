@@ -1,0 +1,60 @@
+{
+  "name": "Mis dietas",
+  "short_name": "Mis dietas",
+  "description": "Dietas y gastos de la tarjeta por periodos. App no oficial.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#eef3f0",
+  "theme_color": "#1d6b4c",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "share_target": {
+    "action": "./compartir",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "archivo",
+          "accept": [
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "text/csv",
+            "text/plain",
+            "application/json",
+            "application/octet-stream",
+            ".xls",
+            ".xlsx",
+            ".csv",
+            ".txt",
+            ".json"
+          ]
+        }
+      ]
+    }
+  }
+}
