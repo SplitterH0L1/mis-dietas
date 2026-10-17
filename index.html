@@ -34,6 +34,7 @@
   --font-body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
   --font-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --radius: 14px;
+  --marca: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='170'%3E%3Ctext x='130' y='95' text-anchor='middle' transform='rotate(-28 130 85)' font-family='Arial, Helvetica, sans-serif' font-size='30' font-weight='700' fill='rgba(29,107,76,0.075)'%3ELarry%3C/text%3E%3C/svg%3E");
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -41,10 +42,12 @@
     --fg: #e4ede8; --muted: #9aaba3; --accent: #52c491; --accent-soft: #173a2c; --on-accent: #08130e;
     --warn: #f0a35e; --warn-soft: #3a2614; --danger: #ff8a7f; --danger-soft: #3f1b18;
     --media: #8fb0f0; --media-soft: #1c2a45;
+    --marca: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='170'%3E%3Ctext x='130' y='95' text-anchor='middle' transform='rotate(-28 130 85)' font-family='Arial, Helvetica, sans-serif' font-size='30' font-weight='700' fill='rgba(228,237,232,0.06)'%3ELarry%3C/text%3E%3C/svg%3E");
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
+  --marca: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='170'%3E%3Ctext x='130' y='95' text-anchor='middle' transform='rotate(-28 130 85)' font-family='Arial, Helvetica, sans-serif' font-size='30' font-weight='700' fill='rgba(228,237,232,0.06)'%3ELarry%3C/text%3E%3C/svg%3E");
   --bg: #0e1412; --surface: #161f1b; --surface-2: #1e2a25; --line: #2c3a34;
   --fg: #e4ede8; --muted: #9aaba3; --accent: #52c491; --accent-soft: #173a2c; --on-accent: #08130e;
   --warn: #f0a35e; --warn-soft: #3a2614; --danger: #ff8a7f; --danger-soft: #3f1b18;
@@ -108,6 +111,13 @@ a.btn.primary { color: var(--on-accent); }
 .pegar { display: grid; gap: 10px; background: var(--surface-2); border-radius: 12px; padding: 12px; }
 .pegar textarea { width: 100%; min-height: 8rem; resize: vertical; border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: var(--surface); color: var(--fg); font: 0.85rem/1.4 var(--font-num); }
 .desde { margin: 0; font-size: 0.88rem; }
+.previo { display: grid; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.previo ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 18rem; overflow: auto; }
+.previo li { display: grid; grid-template-columns: 1fr auto; gap: 0 10px; font-size: 0.86rem; border-top: 1px solid var(--line); padding-top: 6px; }
+.previo li:first-child { border-top: 0; padding-top: 0; }
+.previo li span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.previo li small { grid-column: 1 / -1; color: var(--muted); font-size: 0.75rem; }
+.previo li.ya span { color: var(--muted); }
 .cifras { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .cifra { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; min-width: 0; }
 .cifra b { display: block; font-family: var(--font-num); font-size: 1.1rem; font-variant-numeric: tabular-nums; }
@@ -212,16 +222,17 @@ input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; poin
 .guia-txt h3 { font-family: var(--font-display); font-size: 0.98rem; font-weight: 600; margin: 0 0 2px; }
 .guia-txt p { margin: 0; font-size: 0.9rem; line-height: 1.5; }
 .guia-txt p + p { margin-top: 6px; }
-/* Primera configuración, casillas y pie */
+/* Marca de agua: muy suave, por encima pero sin recibir toques */
+.marca-agua { position: fixed; inset: 0; pointer-events: none; z-index: 30; background-image: var(--marca); background-repeat: repeat; }
+/* Primera configuración y pie */
 main[data-setup] > :not(header):not(#setup):not(footer) { display: none !important; }
 main[data-setup] header .periodo { display: none; }
-.check { display: flex; gap: 10px; align-items: flex-start; font-size: 0.9rem; cursor: pointer; }
-.check input { accent-color: var(--accent); width: 1.15rem; height: 1.15rem; margin: 2px 0 0; flex: none; }
 .pie { text-align: center; font-size: 0.78rem; color: var(--muted); padding-top: 4px; }
 @media (prefers-reduced-motion: reduce) { .barra > span { transition: none; } }
 </style>
 </head>
 <body>
+<div class="marca-agua" aria-hidden="true"></div>
 <main id="app">
   <header>
     <div class="top">
@@ -245,8 +256,6 @@ main[data-setup] header .periodo { display: none; }
       <label class="campo" for="cfgDieta">Dieta completa (€)<input id="cfgDieta" inputmode="decimal" autocomplete="off" placeholder="0,00"></label>
       <label class="campo" for="cfgMedia">Media dieta (€)<input id="cfgMedia" inputmode="decimal" autocomplete="off" placeholder="0,00"></label>
     </div>
-    <label class="check" for="cfgNomina"><input type="checkbox" id="cfgNomina"><span>Si gasto más que mis dietas, me lo descuentan de la nómina</span></label>
-    <label class="check" for="cfgSobrante"><input type="checkbox" id="cfgSobrante"><span>Lo que no gasto no lo cobro (se lo queda la empresa)</span></label>
     <div class="btns">
       <button class="btn primary" data-action="empezar">Empezar</button>
       <label class="btn" for="fileBackupSetup">Tengo una copia: restaurar</label>
@@ -296,14 +305,15 @@ main[data-setup] header .periodo { display: none; }
     </div>
     <p class="desde" id="desdeHint"></p>
     <div class="pegar" id="pegarPanel" hidden>
-      <label class="campo" for="txtPegar">Pega aquí la tabla de movimientos copiada de Edenred
-        <textarea id="txtPegar" rows="6" autocomplete="off" spellcheck="false" placeholder="15/10/2026  13:45:00  BAR EJEMPLO - C. MAYOR 1  Consumo  -12,50 €"></textarea>
+      <label class="campo" for="txtPegar">Pega aquí los movimientos copiados de Edenred (web o app)
+        <textarea id="txtPegar" rows="6" autocomplete="off" spellcheck="false" placeholder="Pega la tabla de la web o el texto copiado de la app de Edenred"></textarea>
       </label>
       <div class="btns">
         <button class="btn primary" data-action="pegar-anadir">Añadir movimientos</button>
         <button class="btn" data-action="pegar-portapapeles">Pegar del portapapeles</button>
         <button class="btn" data-action="pegar-cerrar">Cancelar</button>
       </div>
+      <div id="pegarPrevio" hidden></div>
     </div>
     <input type="file" id="fileMov" accept=".xls,.xlsx,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv">
     <div id="movMsg"></div>
@@ -324,8 +334,6 @@ main[data-setup] header .periodo { display: none; }
         <input id="ajDia" inputmode="numeric" autocomplete="off">
       </label>
     </div>
-    <label class="check" for="ajNomina"><input type="checkbox" id="ajNomina"><span>Si gasto más que mis dietas, me lo descuentan de la nómina</span></label>
-    <label class="check" for="ajSobrante"><input type="checkbox" id="ajSobrante"><span>Lo que no gasto no lo cobro (se lo queda la empresa)</span></label>
   </section>
 
   <section class="card" aria-labelledby="h-copia">
@@ -342,7 +350,7 @@ main[data-setup] header .periodo { display: none; }
     <div id="copiaMsg"></div>
   </section>
 
-  <footer class="pie">Mis dietas · App no oficial, sin relación con Edenred.</footer>
+  <footer class="pie">Mis dietas · Creada por <b>Larry</b> · App no oficial, sin relación con Edenred.</footer>
 </main>
 
 <script>
@@ -378,11 +386,20 @@ function diasDe(inicio) {
 }
 
 /* ------------------------------------------------------------------- estado */
-const S = { ajustes: { dieta: 0, media: 0, diaInicio: 1, nomina: false, sobrante: false, configurado: false }, marcas: {}, sueltas: {}, movs: {}, manuales: {}, saldo: null };
+const S = { ajustes: { dieta: 0, media: 0, diaInicio: 1, configurado: false }, marcas: {}, sueltas: {}, movs: {}, manuales: {}, saldo: null };
 const ui = { inicio: inicioPeriodo(hoyISO()), abierto: null, confirmar: null, editor: null };
 
 /* Un movimiento es único por fecha, hora e importe (el texto del sitio puede variar entre la web y el XLS). */
 const movKey = m => m.h ? `${m.f} ${m.h}|${m.i.toFixed(2)}` : `${m.f}|${m.i.toFixed(2)}|${m.s}`;
+/* Los movimientos sin hora (copiados de la app de Edenred) pueden repetirse de verdad el mismo día:
+   cada uno lleva su propia clave (…#2, #3). Los que tienen hora son únicos por fecha, hora e importe. */
+function claveLibre(m) {
+  const base = movKey(m);
+  if (m.h) return base;
+  let k = base, n = 1;
+  while (S.movs[k]) { n++; k = `${base}#${n}`; }
+  return k;
+}
 const esConsumo = m => m.i < 0 && (!m.t || /^consumo/i.test(m.t));
 
 /* Por día: total gastado = tarjeta (archivo + a mano) + efectivo. Todo se resta de las dietas. */
@@ -425,8 +442,10 @@ function resumen(inicio, idx) {
 
 /* ----------------------------------------------------------------- guardado */
 const LS_KEY = "mis-dietas-v1";
-function leerLocal() { try { const t = localStorage.getItem(LS_KEY); return t ? JSON.parse(t) : null; } catch (e) { return null; } }
-function escribirLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify(S)); almacenOK = true; } catch (e) { almacenOK = false; pintarEstado(); } }
+let ultimoGuardado = null;   /* lo último que esta ventana leyó o guardó */
+function textoLocal() { try { return localStorage.getItem(LS_KEY); } catch (e) { return null; } }
+function leerLocal() { const t = textoLocal(); ultimoGuardado = t; try { return t ? JSON.parse(t) : null; } catch (e) { return null; } }
+function escribirLocal() { try { const t = JSON.stringify(S); localStorage.setItem(LS_KEY, t); ultimoGuardado = t; almacenOK = true; } catch (e) { almacenOK = false; pintarEstado(); } }
 function aplicar(obj) {
   if (!obj || typeof obj !== "object") return false;
   if (obj.ajustes && typeof obj.ajustes === "object") {
@@ -437,12 +456,10 @@ function aplicar(obj) {
     if ("diaInicio" in a) {
       const k = parseInt(a.diaInicio, 10);
       if (k >= 1 && k <= 28) S.ajustes.diaInicio = k;
-      S.ajustes.nomina = !!a.nomina;
-      S.ajustes.sobrante = !!a.sobrante;
       S.ajustes.configurado = a.configurado !== false;
     } else {
-      /* Datos y copias de las primeras versiones: periodo del 16 al 15, descuento en nómina y sobrante para la empresa. */
-      Object.assign(S.ajustes, { diaInicio: 16, nomina: true, sobrante: true, configurado: true });
+      /* Datos y copias de las primeras versiones: periodo del 16 al 15. */
+      Object.assign(S.ajustes, { diaInicio: 16, configurado: true });
     }
   }
   if (obj.marcas && typeof obj.marcas === "object") {
@@ -458,7 +475,7 @@ function aplicar(obj) {
     for (const m of Object.values(obj.movs)) {
       if (!m || !/^\d{4}-\d{2}-\d{2}$/.test(m.f) || !Number.isFinite(Number(m.i))) continue;
       const mov = { f: m.f, h: String(m.h || ""), s: String(m.s || "").slice(0, 80), i: Number(m.i), t: String(m.t || "").slice(0, 30) };
-      S.movs[movKey(mov)] = mov;
+      S.movs[claveLibre(mov)] = mov;
     }
   }
   if (obj.manuales && typeof obj.manuales === "object") {
@@ -703,14 +720,123 @@ function parsePegado(texto) {
   return { movs, saldo, ignorados };
 }
 
+/* Texto copiado de la pantalla Movimientos de la app de Edenred:
+   «Bar Ejemplo / Jueves, 15 de octubre / -14,00 €». No trae hora ni año, y al copiarlo desde el móvil
+   los importes pueden quedar separados de su sitio, pero siempre en el mismo orden: se emparejan por orden. */
+const MESES_NUM = { enero: 1, febrero: 2, marzo: 3, abril: 4, mayo: 5, junio: 6, julio: 7, agosto: 8, septiembre: 9, setiembre: 9, octubre: 10, noviembre: 11, diciembre: 12 };
+const DIAS_NUM = { domingo: 0, lunes: 1, martes: 2, miercoles: 3, jueves: 4, viernes: 5, sabado: 6 };
+const sinTildes = t => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+function parsePegadoApp(texto) {
+  const lineas = String(texto).replace(/\u00a0/g, " ").split(/[\t\r\n]+/).map(t => t.replace(/\s+/g, " ").trim()).filter(Boolean);
+  const reFecha = /(?:(lunes|martes|miercoles|jueves|viernes|sabado|domingo),?\s+)?(\d{1,2})\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)(?:\s+(?:de\s+)?(\d{4}))?/i;
+  const reEuro = /([+\-−–]?)\s?(\d{1,3}(?:\.\d{3})*,\d{2})\s?€/g;
+  const reSinEuro = /^([+\-−–])\s?(\d{1,3}(?:\.\d{3})*,\d{2})$/;
+  const ruido = /^(movimientos|filtrar por fecha|saldo|ticket restaurant|hoy|ayer)\b/i;
+  const hayEuro = reEuro.test(lineas.join("\n")); reEuro.lastIndex = 0;
+  const items = [], importes = [];
+  let pendiente = "";
+  for (const linea of lineas) {
+    let resto = linea;
+    if (hayEuro) {
+      resto = linea.replace(reEuro, (_, signo, num) => { importes.push((/[-−–]/.test(signo) ? -1 : 1) * parseImporte(num)); return " "; });
+    } else {
+      const m = linea.match(reSinEuro);
+      if (m) { importes.push((m[1] === "+" ? 1 : -1) * parseImporte(m[2])); continue; }
+    }
+    resto = resto.replace(/\s+/g, " ").trim();
+    if (!resto) continue;
+    const plano = sinTildes(resto);
+    const f = plano.match(reFecha);
+    if (f) {
+      const sitio = resto.slice(0, f.index).replace(/[,\s]+$/, "").trim();
+      items.push({ sitio: sitio || pendiente, dia: +f[2], mes: MESES_NUM[f[3].toLowerCase()], anio: f[4] ? +f[4] : 0, sem: f[1] ? DIAS_NUM[f[1].toLowerCase()] : null });
+      pendiente = "";
+    } else if (!ruido.test(plano)) {
+      pendiente = resto;
+    }
+  }
+  const res = { movs: [], ignorados: 0, saldo: null, origen: "app", fechas: items.length, importes: importes.length };
+  if (!items.length) return res;
+  if (items.length !== importes.length) {
+    res.descuadre = `He encontrado ${items.length} ${items.length === 1 ? "movimiento" : "movimientos"} y ${importes.length} ${importes.length === 1 ? "importe" : "importes"}, y no cuadran. Copia otra vez la pantalla de movimientos completa, desde el primer sitio hasta el último importe.`;
+    return res;
+  }
+  const hoy = parseISO(hoyISO());
+  const tope = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 2);
+  items.forEach((it, n) => {
+    const v = importes[n];
+    if (!(it.mes >= 1) || !(it.dia >= 1 && it.dia <= 31) || v == null) return;
+    if (v >= 0) { res.ignorados++; return; }
+    let anio = it.anio;
+    if (!anio) {
+      const Y = hoy.getFullYear(), cand = [Y, Y - 1, Y - 2], fecha = a => new Date(a, it.mes - 1, it.dia);
+      /* El día de la semana dice de qué año es; se aceptan dos días «de más» por si el reloj del móvil va atrasado. */
+      const porSemana = it.sem == null ? null : cand.find(a => fecha(a) <= tope && fecha(a).getDay() === it.sem);
+      anio = porSemana || cand.find(a => fecha(a) <= hoy) || Y;
+    }
+    const d = new Date(anio, it.mes - 1, it.dia);
+    if (d.getMonth() !== it.mes - 1) return;
+    res.movs.push({ f: isoOf(d), h: "", s: it.sitio.slice(0, 80), i: -Math.round(Math.abs(v) * 100) / 100, t: "Consumo" });
+  });
+  return res;
+}
+/* Primero el formato de la web (con fecha numérica y hora); si no, el de la app. */
+function leerTextoPegado(texto) {
+  const web = parsePegado(texto);
+  if (web.movs.length || web.ignorados) return { ...web, origen: "web" };
+  return parsePegadoApp(texto);
+}
+/* Busca un movimiento guardado con la misma fecha e importe que no se haya emparejado ya. */
+function mismoGasto(m, usados, soloSinHora) {
+  const c = toCents(m.i);
+  for (const [k, e] of Object.entries(S.movs)) {
+    if (usados.has(k) || e.f !== m.f || toCents(e.i) !== c) continue;
+    if (soloSinHora && e.h) continue;
+    return k;
+  }
+  return null;
+}
+function abrirPrevio(res) {
+  ui.previo = res;
+  const panel = $("pegarPanel"); panel.hidden = false;
+  const b = document.querySelector("[data-action=abrir-pegar]"); if (b) b.setAttribute("aria-expanded", "true");
+  const usados = new Set();
+  const filas = res.movs.map(m => {
+    const ya = mismoGasto(m, usados, false);
+    if (ya) usados.add(ya);
+    const d = parseISO(m.f);
+    return `<li class="${ya ? "ya" : ""}"><span>${DIAS[d.getDay()]} ${fechaLarga(m.f)} · ${esc(m.s || "Sin detalle")}</span><span class="num">${eur(toCents(-m.i))}</span>${ya ? "<small>Ya está guardado</small>" : ""}</li>`;
+  }).join("");
+  const nuevos = res.movs.length - usados.size;
+  $("pegarPrevio").innerHTML = `<div class="previo" role="region" aria-label="Movimientos copiados de la app">
+    <b>He leído ${res.movs.length} ${res.movs.length === 1 ? "movimiento" : "movimientos"} de la app de Edenred. Comprueba que cada importe va con su sitio y su fecha.</b>
+    ${res.ignorados ? `<span class="small muted">${res.ignorados} con importe positivo (recargas) no se cuentan.</span>` : ""}
+    <ul>${filas}</ul>
+    <div class="btns"><button class="btn primary" data-action="previo-anadir">${nuevos ? `Añadir ${nuevos} ${nuevos === 1 ? "nuevo" : "nuevos"}` : "Añadir"}</button><button class="btn" data-action="previo-cancelar">Cancelar</button></div>
+  </div>`;
+  $("pegarPrevio").hidden = false;
+  $("pegarPrevio").scrollIntoView({ block: "nearest" });
+}
+
 /* Mete movimientos nuevos (del XLS o pegados), sin duplicar y sustituyendo los apuntados a mano iguales. */
 function incorporar(res, verbo) {
-  let nuevos = 0, sustituidos = 0;
-  const meses = new Set();
+  let nuevos = 0, sustituidos = 0, completados = 0;
+  const meses = new Set(), usados = new Set();
   for (const m of res.movs) {
-    const k = movKey(m);
-    if (S.movs[k]) continue;
-    S.movs[k] = m; nuevos++; meses.add(m.f.slice(0, 7));
+    let k;
+    if (!m.h) {
+      /* Sin hora (app de Edenred): si ya hay uno guardado con la misma fecha e importe, es el mismo. */
+      const igual = mismoGasto(m, usados, false);
+      if (igual) { usados.add(igual); continue; }
+      k = claveLibre(m);
+    } else {
+      k = movKey(m);
+      if (S.movs[k]) { usados.add(k); continue; }
+      /* Con hora (web o XLS): sustituye al copiado de la app con la misma fecha e importe. */
+      const sinHora = mismoGasto(m, usados, true);
+      if (sinHora) { delete S.movs[sinHora]; S.movs[k] = m; usados.add(k); completados++; meses.add(m.f.slice(0, 7)); continue; }
+    }
+    S.movs[k] = m; usados.add(k); nuevos++; meses.add(m.f.slice(0, 7));
     const c = toCents(-m.i);
     const igual = Object.values(S.manuales).find(g => g.tipo === "tarjeta" && g.f === m.f && toCents(g.i) === c);
     if (igual) { delete S.manuales[igual.id]; sustituidos++; }
@@ -720,9 +846,10 @@ function incorporar(res, verbo) {
   if (res.saldo != null) { S.saldo = { valor: res.saldo, fecha: hoyISO() }; ids.push("config"); }
   render();
   nube.guardar(ids);
-  const rep = res.movs.length - nuevos;
+  const rep = res.movs.length - nuevos - completados;
   const ign = res.ignorados ? ` ${res.ignorados} ${res.ignorados === 1 ? "movimiento que no es consumo se ha ignorado" : "movimientos que no son consumos se han ignorado"}.` : "";
-  const sus = sustituidos ? ` ${sustituidos} ${sustituidos === 1 ? "gasto apuntado a mano se ha sustituido" : "gastos apuntados a mano se han sustituido"} por el de Edenred.` : "";
+  const sus = (sustituidos ? ` ${sustituidos} ${sustituidos === 1 ? "gasto apuntado a mano se ha sustituido" : "gastos apuntados a mano se han sustituido"} por el de Edenred.` : "")
+    + (completados ? ` ${completados} ${completados === 1 ? "movimiento copiado de la app se ha completado" : "movimientos copiados de la app se han completado"} con la hora.` : "");
   const n = res.movs.length;
   mensaje("movMsg", `${n} ${n === 1 ? "movimiento " + verbo.slice(0, -1) : "movimientos " + verbo}: ${nuevos} ${nuevos === 1 ? "nuevo" : "nuevos"}${rep ? `, ${rep} ya estaban` : ""}.${ign}${sus}`, "ok");
 }
@@ -778,6 +905,7 @@ function abrirEditor(datos) {
 }
 function cerrarPegar() {
   $("pegarPanel").hidden = true; $("txtPegar").value = "";
+  ui.previo = null; $("pegarPrevio").hidden = true; $("pegarPrevio").innerHTML = "";
   const b = document.querySelector("[data-action=abrir-pegar]"); if (b) b.setAttribute("aria-expanded", "false");
 }
 function cerrarEditor() { ui.editor = null; $("editor").innerHTML = ""; }
@@ -826,13 +954,12 @@ function render() {
   const pct = R.dietas > 0 ? Math.min(100, (R.gasto / R.dietas) * 100) : (R.gasto > 0 ? 100 : 0);
   const finTxt = `${parseISO(fin).getDate()} de ${MESES_L[parseISO(fin).getMonth()]}`;
   let estado;
-  const reg = S.ajustes;
-  if (mal) estado = reg.nomina ? `Te descontarán ${eur(-R.queda)} de la nómina si el periodo cierra así.` : `Te has pasado ${eur(-R.queda)} de tus dietas en este periodo.`;
+  if (mal) estado = `Te has pasado ${eur(-R.queda)} de tus dietas en este periodo.`;
   else if (R.queda === 0 && R.dietas > 0) estado = "Justo en el límite de tus dietas.";
   else if (R.dietas === 0 && R.gasto === 0) estado = "Marca tus dietas e importa los movimientos de la tarjeta para ver cuánto te queda.";
-  else if (justo) estado = `Cuidado: te queda menos de una dieta completa.${reg.sobrante ? ` Lo que no gastes antes del ${finTxt} se lo queda la empresa.` : ""}`;
-  else if (fin < hoy) estado = reg.sobrante ? `Sobraron ${eur(R.queda)}: se los quedó la empresa.` : `Sobraron ${eur(R.queda)} de dietas en este periodo.`;
-  else estado = reg.sobrante ? `Lo que no gastes antes del ${finTxt} se lo queda la empresa.` : `Te quedan ${eur(R.queda)} de dietas hasta el ${finTxt}.`;
+  else if (justo) estado = "Cuidado: te queda menos de una dieta completa.";
+  else if (fin < hoy) estado = `Sobraron ${eur(R.queda)} de dietas en este periodo.`;
+  else estado = `Te quedan ${eur(R.queda)} de dietas hasta el ${finTxt}.`;
 
   // ritmo de gasto (solo en el periodo actual)
   const ritmo = [];
@@ -928,8 +1055,6 @@ function render() {
     const inp = $(id);
     if (document.activeElement !== inp) inp.value = String(v).replace(".", ",");
   }
-  $("ajNomina").checked = !!S.ajustes.nomina;
-  $("ajSobrante").checked = !!S.ajustes.sobrante;
   pintarSetup();
   pintarEstado();
 }
@@ -944,7 +1069,7 @@ const AYUDA = {
     "Cada periodo tiene los días que le tocan según el mes."]],
   hero: ["Te queda por gastar", [
     "Son tus dietas del periodo menos todo lo que has gastado, con tarjeta y en efectivo.",
-    "Si sale en rojo, te has pasado de tus dietas. Si en Ajustes marcas que te lo descuentan de la nómina, te dice cuánto te descontarán. Si marcas que lo que sobra se lo queda la empresa, te lo recuerda.",
+    "Si sale en rojo, te has pasado de tus dietas, y la cifra dice cuánto.",
     "En naranja: te queda menos de una dieta completa. Es el aviso para frenar antes de llegar al rojo.",
     "Debajo ves cuánto puedes gastar al día hasta el final del periodo para no pasarte. A partir del tercer día, también una previsión: lo que gastarás en todo el periodo si sigues al mismo ritmo, comparado con las dietas que llevas apuntadas.",
     "La barra muestra qué parte de tus dietas llevas gastada."]],
@@ -962,14 +1087,15 @@ const AYUDA = {
     "«Ir a Edenred» abre la web de Edenred en otra pestaña. Debajo te digo qué fecha poner en «Desde» para traer solo lo nuevo.",
     "Hay dos formas de traer los movimientos: copiar la tabla de movimientos en Edenred y pulsar «Pegar movimientos», o descargar el XLS en Edenred y pulsar «Importar archivo XLS».",
     "Para copiar la tabla: mantén pulsada la primera fecha, arrastra hasta el último importe y pulsa Copiar. «Seleccionar todo» también vale: la app se queda solo con las filas de movimientos.",
+    "También puedes copiar desde la app de Edenred: en la pantalla Movimientos copia el texto (desde las apps recientes → Seleccionar, o con Google Lens) y pégalo en «Pegar movimientos». Antes de añadirlos te enseño la lista para que compruebes que cada importe va con su sitio. Solo se copia lo que se ve en pantalla: si hay más, baja y copia otra vez.",
+    "La app de Edenred no muestra la hora: si después traes los mismos movimientos de la web o del XLS, se reconocen por fecha e importe y se completan con la hora, sin contarse dos veces.",
     "Solo se cuentan los consumos. Recargas, devoluciones y demás tipos se ignoran.",
     "Puedes traer movimientos que se solapen: uno repetido no se cuenta dos veces. Si habías apuntado a mano un gasto con tarjeta del mismo día e importe, se cambia por el de Edenred.",
     "Los pagos pueden tardar hasta 24 horas en aparecer en Edenred.",
     "«Borrar movimientos» quita solo los traídos de Edenred. Tus dietas y tus gastos a mano se quedan."]],
   importes: ["Ajustes", [
     "Lo que te pagan por cada dieta completa y por cada media dieta. Si los cambias, se recalculan todos los periodos, también los anteriores.",
-    "El día en que empieza tu periodo, del 1 al 28. Si lo cambias, las dietas sin día concreto que ya apuntaste se quedan en el periodo antiguo.",
-    "Las dos casillas son las reglas de tu empresa. Solo cambian los avisos (descuento en nómina y qué pasa con lo que sobra), no las cuentas."]],
+    "El día en que empieza tu periodo, del 1 al 28. Si lo cambias, las dietas sin día concreto que ya apuntaste se quedan en el periodo antiguo."]],
   copia: ["Excel y copia de seguridad", [
     "«Exportar periodo a Excel» descarga el periodo que estás viendo en un archivo CSV que se abre con Excel: días, dietas, gastos con tarjeta y en efectivo, y los totales.",
     "«Guardar copia» descarga todos tus datos en un archivo en la carpeta Descargas.",
@@ -981,6 +1107,8 @@ const AYUDA = {
     "Cuando haya una versión nueva, se actualiza sola la próxima vez que la abras con conexión."]],
   aviso: ["App no oficial", [
     "Esta app no es de Edenred ni tiene relación con Edenred. Solo lee lo que tú le das: el archivo o la tabla de movimientos que copias de su web."]],
+  sobre: ["Sobre la app", [
+    "Mis dietas ha sido creada por Larry para llevar las dietas y los gastos de la tarjeta sin complicaciones. Es gratuita."]],
   guardado: ["Dónde se guardan tus datos", [
     "Tus datos se guardan solo en este móvil, dentro de la app. Nadie más los ve: en internet solo está el programa. Si desinstalas la app, borras los datos de Chrome o cambias de móvil, se pierden: guarda una copia de vez en cuando.", "Arriba a la derecha ves si se está guardando bien."]],
 };
@@ -989,7 +1117,7 @@ function pintarAyudas() {
     const box = $("info-" + k);
     if (box) box.innerHTML = parrafos.map(t => `<p>${esc(t)}</p>`).join("");
   }
-  $("guiaTxt").innerHTML = ["periodo", "hero", "gastos", "dias", "sueltas", "mov", "importes", "copia", "instalar", "guardado", "aviso"]
+  $("guiaTxt").innerHTML = ["periodo", "hero", "gastos", "dias", "sueltas", "mov", "importes", "copia", "instalar", "guardado", "aviso", "sobre"]
     .map(k => `<div><h3>${esc(AYUDA[k][0])}</h3>${AYUDA[k][1].map(t => `<p>${esc(t)}</p>`).join("")}</div>`).join("");
 }
 
@@ -1070,14 +1198,24 @@ document.addEventListener("click", ev => {
   else if (a === "pegar-anadir") {
     const texto = $("txtPegar").value;
     if (!texto.trim()) { mensaje("movMsg", "Pega primero la tabla de movimientos copiada de Edenred.", "error"); return; }
-    const res = parsePegado(texto);
+    const res = leerTextoPegado(texto);
+    if (res.descuadre) { mensaje("movMsg", res.descuadre, "error"); return; }
     if (!res.movs.length) {
-      mensaje("movMsg", res.ignorados ? "En lo que has pegado no hay consumos, solo movimientos de otro tipo." : "No he encontrado movimientos en lo que has pegado. Copia la tabla de Edenred desde la primera fecha hasta el último importe.", "error");
+      mensaje("movMsg", res.ignorados ? "En lo que has pegado no hay consumos, solo movimientos de otro tipo." : "No he encontrado movimientos en lo que has pegado. Copia la tabla de la web de Edenred o la pantalla Movimientos de su app.", "error");
       return;
     }
+    mensaje("movMsg", "");
+    if (res.origen === "app") { abrirPrevio(res); return; }
     cerrarPegar();
     incorporar(res, "pegados");
   }
+  else if (a === "previo-anadir") {
+    const res = ui.previo;
+    if (!res) return;
+    cerrarPegar();
+    incorporar(res, "pegados");
+  }
+  else if (a === "previo-cancelar") { ui.previo = null; $("pegarPrevio").hidden = true; $("pegarPrevio").innerHTML = ""; }
   else if (a === "empezar") empezar();
   else if (a === "export-csv") exportarCsv();
   else if (a === "backup") guardarCopia();
@@ -1113,7 +1251,7 @@ function empezar() {
   if (!(k >= 1 && k <= 28)) { mensaje("setupMsg", "Escribe el día en que empieza tu periodo, del 1 al 28.", "error"); return; }
   if (d == null || d <= 0) { mensaje("setupMsg", "Escribe cuánto te pagan por una dieta completa, por ejemplo 32.", "error"); return; }
   if (m == null || m < 0) { mensaje("setupMsg", "Escribe cuánto te pagan por una media dieta, o déjalo vacío si no tienes.", "error"); return; }
-  Object.assign(S.ajustes, { diaInicio: k, dieta: Math.round(d * 100) / 100, media: Math.round(m * 100) / 100, nomina: $("cfgNomina").checked, sobrante: $("cfgSobrante").checked, configurado: true });
+  Object.assign(S.ajustes, { diaInicio: k, dieta: Math.round(d * 100) / 100, media: Math.round(m * 100) / 100, configurado: true });
   ui.inicio = inicioPeriodo(hoyISO());
   mensaje("setupMsg", "");
   render();
@@ -1142,15 +1280,12 @@ $("ajDia").addEventListener("change", () => {
   render(); nube.guardar(["config"], 600);
 });
 $("ajDia").addEventListener("keydown", e => { if (e.key === "Enter") e.target.blur(); });
-for (const [id, key] of [["ajNomina", "nomina"], ["ajSobrante", "sobrante"]]) {
-  $(id).addEventListener("change", () => { S.ajustes[key] = $(id).checked; render(); nube.guardar(["config"], 600); });
-}
 
 /* --------------------------------------------------------- Excel y copias */
 function csvPeriodo() {
   const idx = indicePorDia(); const R = resumen(ui.inicio, idx);
   const n = c => (c / 100).toFixed(2).replace(".", ",");
-  const q = s => `"${String(s).replace(/"/g, '""')}"`;
+  const q = s => { let t = String(s); if (/^[=+\-@\t\r]/.test(t)) t = "'" + t; return `"${t.replace(/"/g, '""')}"`; };
   const filas = [["Fecha", "Día", "Dieta", "Media dieta", "Tarjeta (€)", "Efectivo (€)", "Dónde"].join(";")];
   const donde = e => e ? e.items.map(it => (it.s || "Gasto") + (it.origen === "mano" ? " (a mano)" : it.origen === "efectivo" ? " (efectivo)" : "")).join(" | ") : "";
   for (const d of R.dias) {
@@ -1166,7 +1301,7 @@ function csvPeriodo() {
   filas.push(["Gastado con tarjeta (€)", "", "", "", n(R.tarjeta), "", ""].join(";"));
   filas.push(["Gastado en efectivo (€)", "", "", "", "", n(R.efectivo), ""].join(";"));
   filas.push(["Total gastado (€)", "", "", "", n(R.gasto), "", ""].join(";"));
-  filas.push([R.queda < 0 ? (S.ajustes.nomina ? "Descuento en nómina (€)" : "Te has pasado (€)") : "Te queda por gastar (€)", "", "", "", n(Math.abs(R.queda)), "", ""].join(";"));
+  filas.push([R.queda < 0 ? "Te has pasado (€)" : "Te queda por gastar (€)", "", "", "", n(Math.abs(R.queda)), "", ""].join(";"));
   return "﻿" + filas.join("\r\n") + "\r\n";
 }
 function ofrecerArchivo(nombre, datos, idMsg) {
@@ -1269,6 +1404,33 @@ almacenOK = probarAlmacen();
 aplicar(leerLocal());
 ui.inicio = inicioPeriodo(hoyISO());
 render();
+
+/* La app instalada y una pestaña de Chrome pueden estar abiertas a la vez, y la app puede quedarse abierta varios días.
+   Cuando otra ventana guarda, esta recoge sus cambios (así no los pisa), y si cambia el día pasa sola al periodo de hoy. */
+let diaVisto = hoyISO();
+function ponerAlDia(mirarGuardado) {
+  let cambio = false;
+  if (mirarGuardado !== false) {
+    const t = textoLocal();
+    if (t && t !== ultimoGuardado) {
+      let obj = null;
+      try { obj = JSON.parse(t); } catch (e) { obj = null; }
+      ultimoGuardado = t;
+      if (obj && aplicar(obj)) cambio = true;
+    }
+  }
+  const hoy = hoyISO();
+  if (hoy !== diaVisto) {
+    if (ui.inicio === inicioPeriodo(diaVisto)) { ui.inicio = inicioPeriodo(hoy); ui.abierto = null; }
+    diaVisto = hoy; cambio = true;
+  }
+  if (cambio) { pintarSetup(); render(); }
+}
+window.addEventListener("storage", e => { if (e.key === LS_KEY || e.key === null) ponerAlDia(); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") ponerAlDia(); });
+window.addEventListener("focus", () => ponerAlDia());
+window.addEventListener("pageshow", e => { if (e.persisted) ponerAlDia(); });
+setInterval(() => ponerAlDia(false), 60000);
 </script>
 
 <script>
@@ -1310,7 +1472,9 @@ async function recibirCompartido() {
   let obj = null;
   try { obj = JSON.parse(texto); } catch (e) { obj = null; }
   if (obj && obj.app === "mis-dietas") { recibirCopia(obj); return; }
-  const res = parsePegado(texto);
+  const res = leerTextoPegado(texto);
+  if (res.descuadre) { avisar(res.descuadre, "error"); irAMovimientos(); return; }
+  if (res.origen === "app" && res.movs.length && S.ajustes.configurado) { $("txtPegar").value = texto; abrirPrevio(res); irAMovimientos(); return; }
   if (!res.movs.length) {
     avisar(res.ignorados ? "En lo que has compartido no hay consumos, solo movimientos de otro tipo." : "No he encontrado movimientos en lo que has compartido. Selecciona la tabla de Edenred, desde la primera fecha hasta el último importe.", "error");
     irAMovimientos(); return;
